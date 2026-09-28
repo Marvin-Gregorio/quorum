@@ -142,10 +142,11 @@ voter_turnout
 ```
 
 `votes` is intentionally the only table holding the voter→candidate
-mapping, and no one is ever granted SELECT on it (see §7). `vote_tallies`
-and `voter_turnout` are both maintained exclusively by a trigger function
-running as the table owner (`SECURITY DEFINER`), never written to directly
-by any client role.
+mapping. The only SELECT access anyone has on it is a voter reading their
+own row (see §7) — no one else, including the page owner, can read any row
+in this table. `vote_tallies` and `voter_turnout` are both maintained
+exclusively by a trigger function running as the table owner (`SECURITY
+DEFINER`), never written to directly by any client role.
 
 ## 7. Vote secrecy & tally architecture
 
@@ -155,9 +156,17 @@ connection budget, simultaneously.
 
 - `votes`: voters can INSERT/UPDATE (upsert) only their own row, only while
   `now()` is within the page's voting window and the page's visibility check
-  passes. No SELECT policy exists for any role — not the voter, not the
-  page owner. The table exists purely to enforce one-vote-per-position and
-  to feed the trigger below.
+  passes. The **only** SELECT policy is `USING (voter_id = auth.uid())` — a
+  voter can read back their own current vote, and nobody else (including the
+  page owner) has any SELECT access to this table at all. This doesn't
+  weaken secrecy: secrecy means hiding a voter's choice from *other people*,
+  not from themselves, and it's what lets the ballot page pre-fill a voter's
+  prior choice if they leave and come back before the window closes.
+  Note that the upsert itself doesn't depend on this SELECT policy to begin
+  with — Postgres RLS policies are evaluated per command, so the INSERT and
+  UPDATE policies' own `USING`/`WITH CHECK` clauses are what let
+  `INSERT ... ON CONFLICT (voter_id, position_id) DO UPDATE` resolve and
+  apply, entirely independent of whatever SELECT access exists.
 - An `AFTER INSERT OR UPDATE` trigger on `votes`:
   - Upserts `vote_tallies` (decrementing the previous candidate's count and
     incrementing the new one, when a vote changes).
@@ -236,8 +245,11 @@ connection budget, simultaneously.
    a stale page load or a direct API call cannot sneak in a late vote.
 4. On success, the trigger updates `vote_tallies` and `voter_turnout`.
 5. The UI reflects "you voted for President" per position based on the
-   Server Action's own response — it never re-reads `votes` to confirm,
-   since no one (including the voter) is granted SELECT on that table.
+   Server Action's own response, without a round-trip read. Separately, the
+   ballot page's initial load *does* query `votes` for that voter's own rows
+   (allowed under the self-only SELECT policy in §6/§7) so that a returning
+   voter sees their prior choice pre-selected per position, rather than the
+   ballot looking unanswered just because the page was reloaded.
 
 ## 11. Routes (Next.js App Router)
 
