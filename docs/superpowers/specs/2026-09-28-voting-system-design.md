@@ -28,6 +28,9 @@ Storage, Realtime), designed to run entirely within Supabase's free tier.
   both the voting link and the results dashboard identically.
 - Client-side image compression before candidate photos ever reach Supabase
   Storage.
+- Positions and candidates can only be added or removed before voting opens;
+  once the window starts (or after it ends), that structure is frozen, so a
+  candidate can't be added or disqualified mid-election.
 - Defense-in-depth input handling: sanitize on the client for UX, enforce
   validation/sanitization and all authorization rules server-side (Server
   Actions + RLS), never trusting the client as the security boundary.
@@ -102,19 +105,19 @@ pages
   created_at (timestamptz, default now())
 
 allowed_domains
-  page_id (uuid -> pages.id)
+  page_id (uuid -> pages.id, ON DELETE CASCADE)
   domain (text)
   PRIMARY KEY (page_id, domain)
 
 positions
   id (uuid, PK)
-  page_id (uuid -> pages.id)
+  page_id (uuid -> pages.id, ON DELETE CASCADE)
   title (text)
   display_order (int)
 
 candidates
   id (uuid, PK)
-  position_id (uuid -> positions.id)
+  position_id (uuid -> positions.id, ON DELETE CASCADE)
   name (text)
   bio (text)
   photo_url (text)
@@ -122,24 +125,29 @@ candidates
 votes
   id (uuid, PK)
   voter_id (uuid -> profiles.id)
-  position_id (uuid -> positions.id)
-  candidate_id (uuid -> candidates.id)
+  position_id (uuid -> positions.id, ON DELETE CASCADE)
+  candidate_id (uuid -> candidates.id, ON DELETE CASCADE)
   updated_at (timestamptz)
   UNIQUE (voter_id, position_id)
 
 vote_tallies
-  position_id (uuid -> positions.id)
-  candidate_id (uuid -> candidates.id)
+  position_id (uuid -> positions.id, ON DELETE CASCADE)
+  candidate_id (uuid -> candidates.id, ON DELETE CASCADE)
   vote_count (int, default 0)
   PRIMARY KEY (position_id, candidate_id)
 
 voter_turnout
-  page_id (uuid -> pages.id)
-  position_id (uuid -> positions.id)
+  page_id (uuid -> pages.id, ON DELETE CASCADE)
+  position_id (uuid -> positions.id, ON DELETE CASCADE)
   voter_id (uuid -> profiles.id)
   voted_at (timestamptz)
   PRIMARY KEY (position_id, voter_id)
 ```
+
+Deleting a position cascades to its candidates, and from there to any
+`votes`/`vote_tallies`/`voter_turnout` rows referencing them — though in
+practice those should always be empty when a deletion is allowed at all,
+since deletion is only permitted before voting opens (§14).
 
 `votes` is intentionally the only table holding the voter→candidate
 mapping. The only SELECT access anyone has on it is a voter reading their
@@ -291,3 +299,49 @@ connection budget, simultaneously.
   count}` rows, a few KB per request; a 5–8s polling interval keeps this
   well within a typical monthly egress allowance even with a few hundred
   concurrent result-page viewers.
+
+## 14. Authorization rules for pages, positions & candidates, and the structural edit window
+
+The earlier sections describe `votes`/`vote_tallies`/`voter_turnout` RLS in
+detail; this section makes the rest of the authorization model explicit,
+including a new constraint: **positions and candidates can only be inserted
+or deleted before an election's voting window opens.**
+
+- **`pages`**: SELECT is public when `is_private = false`, or restricted to
+  the owner and to signed-in users whose email domain appears in
+  `allowed_domains` when `is_private = true` (via the shared
+  `is_domain_allowed(page_id, email)` function from §5). INSERT is open to
+  any authenticated user (they become `owner_id`). UPDATE/DELETE are
+  owner-only, at any time — editing the title, voting window, or
+  privacy/domain settings is not restricted by the rule below, since none of
+  those actions can retroactively invalidate a candidate's photo, bio, or a
+  cast vote the way adding/removing a candidate can.
+- **`allowed_domains`**: owner-only for INSERT/UPDATE/DELETE, at any time,
+  following the same reasoning as page settings above.
+- **`positions`**: SELECT follows the parent page's visibility rule.
+  UPDATE (e.g. renaming a position or changing its order) is owner-only, at
+  any time. **INSERT and DELETE are owner-only, and additionally require
+  `now() < pages.voting_starts_at`** for that position's page — enforced via
+  a `WITH CHECK`/`USING` clause that joins to `pages` on `page_id`.
+- **`candidates`**: SELECT follows the parent page's visibility rule (via
+  its position's page). UPDATE (editing a candidate's name, bio, or photo)
+  is owner-only, at any time. **INSERT and DELETE are owner-only, and
+  additionally require `now() < pages.voting_starts_at`** for that
+  candidate's page — enforced the same way, joining `candidates →
+  positions → pages`.
+
+**Why insert/delete specifically, and only before the window opens:** once
+voting has started, removing a candidate would orphan any votes already
+cast for them, and adding one would let people vote for an option nobody
+else had a chance to consider — either undermines trust in the result.
+Editing an existing candidate's bio or photo doesn't have that failure
+mode, so it stays unrestricted; deciding whether that's also worth locking
+down (for example, to stop a name change mid-vote) is left as a follow-up
+question rather than assumed here.
+
+**Enforcement is at the database, not just the UI:** the manager console
+hides the "add candidate" and "delete position" affordances once a page's
+voting window has opened, purely for a clear user experience — but the
+actual protection is the RLS policy itself, so a direct API call attempting
+to insert or delete a position/candidate after the window opens is rejected
+regardless of what the UI shows.
