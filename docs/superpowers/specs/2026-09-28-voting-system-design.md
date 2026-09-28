@@ -53,8 +53,18 @@ Storage, Realtime), designed to run entirely within Supabase's free tier.
 
 ## 4. Core concepts & roles
 
-- **Page**: one election event. Has a unique slug, a title, a privacy flag,
-  a voting window, and is owned by the user who created it.
+- **Page**: one election event. Has a unique slug, an organization name, a
+  title, a privacy flag, a voting window, and is owned by the user who
+  created it. `organization_name` is a free-text field shown above the
+  election title everywhere (ballot, results, manager console, profile
+  list) — it's denormalized per page rather than backed by a shared
+  "organization" entity, matching the rest of this design's single-owner
+  simplicity. A manager running several elections for the same
+  organization types the same name each time; nothing enforces they
+  match. If that drift becomes a real problem, normalizing to a shared
+  `organizations` table (id, name, owner_id) that pages reference is the
+  natural follow-up — not built now, since nothing in the brief asked for
+  multi-election organization management.
 - **Manager**: the `owner_id` of a page. Not a separate role — created a
   page, therefore manages it; no ownership over any other page.
 - **Position**: a single race within a page (e.g. "President"). Belongs to
@@ -97,6 +107,7 @@ profiles
 pages
   id (uuid, PK)
   slug (text, unique)
+  organization_name (text)
   title (text)
   owner_id (uuid -> profiles.id)
   is_private (bool, default false)
