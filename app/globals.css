@@ -1,0 +1,32 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --paper: #EDEAE1;
+  --paper-2: #E3DFD2;
+  --ink: #1C2B3A;
+  --ink-2: #3C4E61;
+  --seal: #9C3B2E;
+  --seal-dark: #7C2E23;
+  --ledger: #46573B;
+  --line: #C9C2B2;
+  --line-strong: #A79F89;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Public Sans', sans-serif;
+}
+
+h1, h2 {
+  font-family: 'Fraunces', serif;
+  font-weight: 600;
+  margin: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
