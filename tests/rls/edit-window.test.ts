@@ -5,6 +5,8 @@ describe('structural edit window', () => {
   let ownerClient: Awaited<ReturnType<typeof createClientAs>>;
   let openPageId: string;
   let notYetOpenPageId: string;
+  let openPositionId: string;
+  let openCandidateId: string;
   const service = createServiceRoleClient();
 
   beforeAll(async () => {
@@ -23,6 +25,20 @@ describe('structural edit window', () => {
       .select()
       .single();
     openPageId = openPage!.id;
+
+    const { data: openPosition } = await service
+      .from('positions')
+      .insert({ page_id: openPageId, title: 'Chair', display_order: 0 })
+      .select()
+      .single();
+    openPositionId = openPosition!.id;
+
+    const { data: openCandidate } = await service
+      .from('candidates')
+      .insert({ position_id: openPositionId, name: 'Incumbent', bio: '' })
+      .select()
+      .single();
+    openCandidateId = openCandidate!.id;
 
     const { data: futurePage } = await service
       .from('pages')
@@ -58,5 +74,30 @@ describe('structural edit window', () => {
       .single();
     expect(error).toBeNull();
     expect(data?.title).toBe('Early Position');
+  });
+
+  it('rejects inserting a candidate once voting has opened', async () => {
+    const { error } = await ownerClient.client
+      .from('candidates')
+      .insert({ position_id: openPositionId, name: 'Latecomer', bio: '' });
+    expect(error).not.toBeNull();
+  });
+
+  it('rejects deleting a candidate once voting has opened', async () => {
+    // The RLS USING clause on candidates' delete policy simply matches zero
+    // rows once voting has started, rather than raising an error — the
+    // delete call itself reports no error, so the real assertion is that
+    // the row is still there afterwards.
+    await ownerClient.client.from('candidates').delete().eq('id', openCandidateId);
+
+    const { data } = await service.from('candidates').select('id').eq('id', openCandidateId);
+    expect(data).toHaveLength(1);
+  });
+
+  it('rejects deleting a position once voting has opened', async () => {
+    await ownerClient.client.from('positions').delete().eq('id', openPositionId);
+
+    const { data } = await service.from('positions').select('id').eq('id', openPositionId);
+    expect(data).toHaveLength(1);
   });
 });

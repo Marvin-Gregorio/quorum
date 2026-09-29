@@ -7,6 +7,8 @@ describe('domain gating on a private page', () => {
   let outsider: Awaited<ReturnType<typeof createClientAs>>;
   let owner: Awaited<ReturnType<typeof createClientAs>>;
   let pageId: string;
+  let positionId: string;
+  let candidateId: string;
 
   beforeAll(async () => {
     insider = await createClientAs('person@insider-domain.example.com');
@@ -29,6 +31,20 @@ describe('domain gating on a private page', () => {
     pageId = page!.id;
 
     await service.from('allowed_domains').insert({ page_id: pageId, domain: 'insider-domain.example.com' });
+
+    const { data: position } = await service
+      .from('positions')
+      .insert({ page_id: pageId, title: 'Chair', display_order: 0 })
+      .select()
+      .single();
+    positionId = position!.id;
+
+    const { data: candidate } = await service
+      .from('candidates')
+      .insert({ position_id: positionId, name: 'X', bio: '' })
+      .select()
+      .single();
+    candidateId = candidate!.id;
   });
 
   afterAll(async () => {
@@ -51,5 +67,26 @@ describe('domain gating on a private page', () => {
     const { data, error } = await owner.client.from('pages').select('id').eq('id', pageId);
     expect(error).toBeNull();
     expect(data).toHaveLength(1);
+  });
+
+  it('rejects a vote from a non-matching-domain user on a private page', async () => {
+    const { error } = await outsider.client.from('votes').insert({
+      voter_id: outsider.userId,
+      position_id: positionId,
+      candidate_id: candidateId,
+    });
+    expect(error).not.toBeNull();
+
+    const { data } = await service.from('votes').select('id').eq('voter_id', outsider.userId);
+    expect(data).toEqual([]);
+  });
+
+  it('allows a vote from a matching-domain user on a private page', async () => {
+    const { error } = await insider.client.from('votes').insert({
+      voter_id: insider.userId,
+      position_id: positionId,
+      candidate_id: candidateId,
+    });
+    expect(error).toBeNull();
   });
 });

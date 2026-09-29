@@ -91,4 +91,36 @@ describe('vote secrecy', () => {
     expect(data).toHaveLength(1);
     expect(data![0].voter_id).toBe(voterA.userId);
   });
+
+  it('moves the tally to a different candidate when the voter changes their vote', async () => {
+    const { data: otherCandidate } = await service
+      .from('candidates')
+      .insert({ position_id: positionId, name: 'Jordan', bio: 'Bio' })
+      .select()
+      .single();
+
+    async function tallyFor(candidate: string): Promise<number> {
+      const { data } = await service
+        .from('vote_tallies')
+        .select('vote_count')
+        .eq('position_id', positionId)
+        .eq('candidate_id', candidate)
+        .maybeSingle();
+      return data?.vote_count ?? 0;
+    }
+
+    expect(await tallyFor(candidateId)).toBe(1);
+    expect(await tallyFor(otherCandidate!.id)).toBe(0);
+
+    const { error } = await voterA.client
+      .from('votes')
+      .upsert(
+        { voter_id: voterA.userId, position_id: positionId, candidate_id: otherCandidate!.id },
+        { onConflict: 'voter_id,position_id' }
+      );
+    expect(error).toBeNull();
+
+    expect(await tallyFor(candidateId)).toBe(0);
+    expect(await tallyFor(otherCandidate!.id)).toBe(1);
+  });
 });
