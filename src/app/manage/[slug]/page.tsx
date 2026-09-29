@@ -52,7 +52,12 @@ export default async function ManagePage({ params }: { params: Promise<{ slug: s
           this task's data) port directly from the validated Manage.dc.html
           design — its state shape (positions array with nested candidates,
           candidateModal/settingsModal) maps onto ManagedElection one for one. */}
-      <RealtimePanel pageId={election.id} initialTallies={initialTallies} initialTurnout={initialTurnout} />
+      <RealtimePanel
+        pageId={election.id}
+        positionIds={positionIds}
+        initialTallies={initialTallies}
+        initialTurnout={initialTurnout}
+      />
     </div>
   );
 }
