@@ -1,7 +1,7 @@
 'use server';
 
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { pageSettingsSchema, candidateSchema } from '@/lib/validation';
+import { pageSettingsSchema, candidateSchema, positionSchema } from '@/lib/validation';
 import { sanitizeText } from '@/lib/sanitize';
 
 export interface PageSettingsInput {
@@ -89,5 +89,30 @@ export async function deleteCandidateAction(candidateId: string): Promise<{ ok: 
   const supabase = await createServerSupabaseClient();
   const { error } = await supabase.from('candidates').delete().eq('id', candidateId);
   if (error) return { error: 'Could not delete the candidate. Positions may be locked once voting opens.' };
+  return { ok: true };
+}
+
+export async function createPositionAction(
+  pageId: string,
+  title: string
+): Promise<{ id: string } | { error: string }> {
+  const result = positionSchema.safeParse({ title });
+  if (!result.success) return { error: result.error.issues[0].message };
+
+  const supabase = await createServerSupabaseClient();
+  const { data, error } = await supabase
+    .from('positions')
+    .insert({ page_id: pageId, title: sanitizeText(title), display_order: 0 })
+    .select()
+    .single();
+
+  if (error || !data) return { error: 'Positions can only be added before voting opens.' };
+  return { id: data.id };
+}
+
+export async function deletePositionAction(positionId: string): Promise<{ ok: true } | { error: string }> {
+  const supabase = await createServerSupabaseClient();
+  const { error } = await supabase.from('positions').delete().eq('id', positionId);
+  if (error) return { error: 'Positions can only be removed before voting opens.' };
   return { ok: true };
 }
