@@ -18,9 +18,15 @@ export interface CreateElectionInput {
   positions: { title: string; candidates: { name: string; bio: string }[] }[];
 }
 
+export interface CreatedElection {
+  slug: string;
+  pageId: string;
+  positions: { title: string; id: string; candidates: { name: string; id: string }[] }[];
+}
+
 export async function createElectionAction(
   input: CreateElectionInput
-): Promise<{ slug: string } | { error: string }> {
+): Promise<CreatedElection | { error: string }> {
   const settingsResult = pageSettingsSchema.safeParse(input);
   if (!settingsResult.success) {
     return { error: settingsResult.error.issues[0].message };
@@ -103,6 +109,8 @@ export async function createElectionAction(
     }
   }
 
+  const createdPositions: CreatedElection['positions'] = [];
+
   for (const [index, position] of input.positions.entries()) {
     const { data: createdPosition, error: positionError } = await supabase
       .from('positions')
@@ -114,17 +122,24 @@ export async function createElectionAction(
       return { error: 'The election was created, but one of its positions could not be saved.' };
     }
 
+    const createdCandidates: { name: string; id: string }[] = [];
     for (const candidate of position.candidates) {
-      const { error: candidateError } = await supabase.from('candidates').insert({
-        position_id: createdPosition.id,
-        name: sanitizeText(candidate.name),
-        bio: sanitizeText(candidate.bio),
-      });
-      if (candidateError) {
+      const { data: createdCandidate, error: candidateError } = await supabase
+        .from('candidates')
+        .insert({
+          position_id: createdPosition.id,
+          name: sanitizeText(candidate.name),
+          bio: sanitizeText(candidate.bio),
+        })
+        .select()
+        .single();
+      if (candidateError || !createdCandidate) {
         return { error: 'The election was created, but one of its candidates could not be saved.' };
       }
+      createdCandidates.push({ name: candidate.name, id: createdCandidate.id });
     }
+    createdPositions.push({ title: position.title, id: createdPosition.id, candidates: createdCandidates });
   }
 
-  return { slug: page.slug };
+  return { slug: page.slug, pageId: page.id, positions: createdPositions };
 }

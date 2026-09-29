@@ -12,6 +12,10 @@
   --line-strong: #A79F89;
 }
 
+* {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
   background: var(--paper);
@@ -19,12 +23,293 @@ body {
   font-family: 'Public Sans', sans-serif;
 }
 
-h1, h2 {
+h1, h2, h3 {
   font-family: 'Fraunces', serif;
   font-weight: 600;
   margin: 0;
 }
 
+button, input, textarea, a {
+  font-family: 'Public Sans', sans-serif;
+}
+
+a {
+  color: var(--ink);
+}
+
+a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
 }
+
+/* Buttons & links */
+.signin-btn {
+  border: 1px solid var(--ink);
+  background: none;
+  border-radius: 3px;
+  padding: 8px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  color: var(--ink);
+  text-decoration: none;
+  display: inline-block;
+}
+
+.primary-btn {
+  display: inline-block;
+  background: var(--seal);
+  color: var(--paper);
+  border: 2px solid var(--seal);
+  border-radius: 3px;
+  padding: 11px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.primary-btn:hover { background: var(--seal-dark); border-color: var(--seal-dark); }
+
+.secondary-btn {
+  background: none;
+  border: 1px solid var(--ink);
+  border-radius: 3px;
+  padding: 11px 20px;
+  font-size: 14px;
+  cursor: pointer;
+  color: var(--ink);
+}
+
+.manage-link {
+  border: 1px solid var(--ink);
+  background: none;
+  border-radius: 3px;
+  padding: 8px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  color: var(--ink);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.upload-btn {
+  display: inline-block;
+  border: 1px solid var(--ink);
+  background: none;
+  border-radius: 3px;
+  padding: 8px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  color: var(--ink);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* OAuth sign-in buttons */
+.oauth-btn {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 14px 20px;
+  border: 1px solid var(--ink);
+  border-radius: 3px;
+  background: var(--paper);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink);
+  cursor: pointer;
+  transition: background-color .15s ease;
+  text-decoration: none;
+  box-sizing: border-box;
+}
+.oauth-btn:hover { background: var(--paper-2); }
+.g-mark {
+  width: 20px; height: 20px; border-radius: 50%;
+  border: 1.5px solid var(--ink-2);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Fraunces', serif; font-size: 12px; font-weight: 700;
+  color: var(--ink-2); flex-shrink: 0;
+}
+.ms-mark {
+  display: inline-grid;
+  grid-template-columns: 8px 8px;
+  grid-template-rows: 8px 8px;
+  gap: 2px;
+  width: 18px; height: 18px;
+  flex-shrink: 0;
+}
+
+/* User menu */
+.user-menu { position: relative; }
+.user-menu-trigger {
+  display: flex; align-items: center; gap: 10px;
+  background: none; border: none; cursor: pointer;
+  padding: 4px; border-radius: 3px;
+}
+.user-menu-trigger:hover { background: var(--paper-2); }
+.user-avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--paper); font-weight: 600; font-size: 12px;
+  flex-shrink: 0; background: var(--ink-2);
+}
+.user-name-text { font-size: 14px; color: var(--ink); }
+.user-dropdown {
+  position: absolute; right: 0; top: calc(100% + 8px);
+  background: var(--paper); border: 1px solid var(--line);
+  border-radius: 3px; min-width: 170px; overflow: hidden; z-index: 30;
+}
+.user-dropdown a, .user-dropdown button {
+  display: block; width: 100%; text-align: left;
+  padding: 10px 16px; font-size: 14px; background: none; border: none;
+  cursor: pointer; text-decoration: none; color: var(--ink);
+  border-bottom: 1px solid var(--line);
+}
+.user-dropdown a:last-child, .user-dropdown button:last-child { border-bottom: none; }
+.user-dropdown a:hover, .user-dropdown button:hover { background: var(--paper-2); }
+@media (max-width: 480px) { .user-name-text { display: none; } }
+
+/* Breadcrumb */
+.breadcrumb-list {
+  list-style: none; display: flex; gap: 8px; margin: 0; padding: 0;
+  font-size: 13px; color: var(--ink-2);
+}
+.breadcrumb-list a { color: var(--ink-2); text-decoration: none; }
+
+/* Status badges */
+.status-badge {
+  font-size: 12px; font-weight: 500; padding: 4px 13px; border-radius: 999px;
+  border: 1px solid transparent; white-space: nowrap; display: inline-block;
+}
+.status-open, .status-neutral { background: rgba(60,78,97,0.14); color: var(--ink-2); border-color: rgba(60,78,97,0.4); }
+.status-closed { background: rgba(156,59,46,0.14); color: var(--seal-dark); border-color: rgba(156,59,46,0.4); }
+.status-scheduled { background: rgba(70,87,59,0.14); color: var(--ledger); border-color: rgba(70,87,59,0.4); }
+
+/* Elections list (profile) */
+.election-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 18px 0; border-bottom: 1px solid var(--line); gap: 16px; flex-wrap: wrap;
+}
+.election-row:first-child { border-top: 1px solid var(--line); }
+
+/* Forms */
+label.field-label { display: block; font-size: 13px; color: var(--ink-2); margin-bottom: 6px; }
+.text-input {
+  width: 100%; padding: 11px 13px; border: 1px solid var(--line-strong);
+  border-radius: 3px; background: var(--paper); font-size: 15px; color: var(--ink);
+}
+.section { border-top: 1px solid var(--line); margin-top: 32px; padding-top: 32px; }
+fieldset { border: none; padding: 0; margin: 0; }
+legend { padding: 0; margin-bottom: 12px; font-size: 13px; color: var(--ink-2); }
+.radio-option { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; cursor: pointer; }
+input[type="radio"].choice {
+  appearance: none; -webkit-appearance: none;
+  width: 18px; height: 18px; border-radius: 50%;
+  border: 2px solid var(--ink-2); margin-top: 2px; flex-shrink: 0; cursor: pointer;
+  background: var(--paper);
+}
+input[type="radio"].choice:checked {
+  border-color: var(--seal); background: var(--seal);
+  box-shadow: inset 0 0 0 3.5px var(--paper);
+}
+.chip {
+  display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px;
+  border: 1px solid var(--line-strong); border-radius: 3px; background: var(--paper-2); font-size: 14px;
+}
+.chip button { background: none; border: none; color: var(--ink-2); cursor: pointer; font-size: 14px; line-height: 1; padding: 0; }
+.dashed-btn {
+  background: none; border: 1px dashed var(--line-strong); border-radius: 3px;
+  padding: 12px 20px; font-size: 14px; color: var(--ink-2); cursor: pointer; width: 100%; text-align: left;
+}
+.position-block { border-top: 1px solid var(--line); padding-top: 28px; margin-top: 28px; }
+.candidate-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 0; border-bottom: 1px solid var(--line);
+}
+.candidate-row:first-child { border-top: 1px solid var(--line); }
+.avatar-sm {
+  width: 36px; height: 36px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--paper); font-weight: 600; font-size: 12px; flex-shrink: 0;
+}
+.avatar {
+  width: 48px; height: 48px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--paper); font-weight: 600; font-size: 15px; flex-shrink: 0;
+}
+.edit-link {
+  background: none; border: none; font-size: 14px; color: var(--ink-2);
+  cursor: pointer; text-decoration: underline; text-underline-offset: 2px;
+}
+.delete-position-btn {
+  background: none; border: none; color: var(--seal-dark); font-size: 13px;
+  cursor: pointer; text-decoration: underline; text-underline-offset: 2px; white-space: nowrap;
+}
+.no-candidates { font-size: 14px; color: var(--ink-2); padding: 16px 0; border-top: 1px solid var(--line); }
+
+/* Modal */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(28,43,58,0.45);
+  display: flex; align-items: center; justify-content: center; padding: 24px; z-index: 20;
+}
+.modal-panel {
+  width: 100%; max-width: 440px; background: var(--paper);
+  border: 1px solid var(--line); border-radius: 4px; padding: 32px;
+}
+.modal-panel.wide { max-width: 520px; max-height: 88vh; overflow-y: auto; }
+
+/* Link row (manage page) */
+.link-row input {
+  flex-grow: 1; padding: 10px 12px; border: 1px solid var(--line-strong);
+  border-radius: 3px; background: var(--paper-2); font-size: 14px; color: var(--ink);
+}
+.link-row button {
+  border: 1px solid var(--ink); background: none; border-radius: 3px;
+  padding: 0 16px; font-size: 14px; cursor: pointer;
+}
+.settings-btn {
+  background: none; border: 1px solid var(--ink); border-radius: 3px;
+  padding: 8px 16px; font-size: 14px; cursor: pointer; color: var(--ink); white-space: nowrap;
+}
+
+/* Ballot */
+.ballot-list { border-top: 1px solid var(--line); }
+.ballot-row {
+  display: flex; gap: 16px; align-items: flex-start; padding: 20px 4px;
+  border-bottom: 1px solid var(--line); cursor: pointer; transition: background-color .15s ease;
+}
+.ballot-row:hover { background: var(--paper-2); }
+.ballot-row:has(input.bubble:checked) { background: var(--paper-2); }
+.ballot-row:has(input.bubble:checked) .cand-name { color: var(--seal-dark); }
+input[type="radio"].bubble {
+  appearance: none; -webkit-appearance: none;
+  width: 22px; height: 22px; border-radius: 50%;
+  border: 2px solid var(--ink-2); margin-top: 2px; flex-shrink: 0; cursor: pointer;
+  background: var(--paper);
+  transition: background-color .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+input[type="radio"].bubble:checked {
+  border-color: var(--seal); background: var(--seal);
+  box-shadow: inset 0 0 0 4px var(--paper);
+}
+
+/* Results */
+.bar-track { height: 10px; background: var(--paper-2); border-radius: 2px; overflow: hidden; }
+.bar-fill { height: 100%; }
+.candidate-line { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 12px; }
+.candidate-name-group { display: flex; align-items: center; gap: 10px; min-width: 0; }

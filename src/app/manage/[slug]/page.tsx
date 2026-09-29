@@ -1,8 +1,10 @@
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { checkPageAccess } from '@/lib/access';
 import { getManagedElection } from '@/lib/queries/manage';
-import { RealtimePanel, type Tally, type Turnout } from './realtime-panel';
+import { UserMenu } from '@/components/user-menu';
+import { ManageConsole, type Tally, type Turnout } from './manage-console';
 
 export default async function ManagePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -29,7 +31,9 @@ export default async function ManagePage({ params }: { params: Promise<{ slug: s
     userData.user.email ?? null
   );
   if (access === 'sign-in') redirect(`/sign-in?next=${encodeURIComponent(`/manage/${slug}`)}`);
-  if (access === 'restricted' || userData.user.id !== election.ownerId) redirect('/access-restricted');
+  if (access === 'restricted' || userData.user.id !== election.ownerId) redirect(`/access-restricted?slug=${slug}`);
+
+  const { data: profile } = await supabase.from('profiles').select('*').eq('id', userData.user.id).single();
 
   const positionIds = election.positions.map((p) => p.id);
 
@@ -44,27 +48,61 @@ export default async function ManagePage({ params }: { params: Promise<{ slug: s
     .select('position_id, voter_id')
     .eq('page_id', election.id);
 
-  const initialTallies: Tally[] = (tallyRows ?? []).map((t: any) => ({
+  const initialTallies: Tally[] = (tallyRows ?? []).map((t) => ({
     positionId: t.position_id,
     candidateId: t.candidate_id,
     voteCount: t.vote_count,
   }));
-  const initialTurnout: Turnout[] = (turnoutRows ?? []).map((t: any) => ({
+  const initialTurnout: Turnout[] = (turnoutRows ?? []).map((t) => ({
     positionId: t.position_id,
     voterId: t.voter_id,
   }));
 
   return (
-    <div>
-      <h1>{election.title}</h1>
-      <p>{election.organizationName}</p>
-      {/* TODO: the positions/candidates roster and settings modal are not
-          built yet. The actions in ./actions.ts and the data shape in
-          ManagedElection (positions[] with nested candidates) exist, but no
-          UI here calls createPositionAction/updateCandidateAction/etc. or
-          opens a settings/candidate modal. */}
-      <RealtimePanel
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <header
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '24px clamp(24px,5vw,64px)',
+          borderBottom: '1px solid var(--line)',
+          flexWrap: 'wrap',
+          gap: 12,
+        }}
+      >
+        <div style={{ fontFamily: "'Fraunces', serif", fontStyle: 'italic', fontWeight: 600, fontSize: 20 }}>
+          Quorum
+        </div>
+        <UserMenu name={profile?.full_name ?? null} email={profile?.email ?? userData.user.email ?? null} />
+      </header>
+
+      <nav aria-label="Breadcrumb" style={{ maxWidth: 900, width: '100%', margin: '0 auto', padding: '16px 24px 0' }}>
+        <ol className="breadcrumb-list">
+          <li>
+            <Link href="/">Home</Link>
+          </li>
+          <li aria-hidden="true">/</li>
+          <li>
+            <Link href="/profile">Profile</Link>
+          </li>
+          <li aria-hidden="true">/</li>
+          <li aria-current="page" style={{ color: 'var(--ink)' }}>
+            {election.title}
+          </li>
+        </ol>
+      </nav>
+
+      <ManageConsole
         pageId={election.id}
+        slug={election.slug}
+        organizationName={election.organizationName}
+        title={election.title}
+        votingStartsAt={election.votingStartsAt}
+        votingEndsAt={election.votingEndsAt}
+        isPrivate={election.isPrivate}
+        domains={election.domains}
+        positions={election.positions}
         positionIds={positionIds}
         initialTallies={initialTallies}
         initialTurnout={initialTurnout}

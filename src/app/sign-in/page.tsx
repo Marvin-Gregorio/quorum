@@ -39,14 +39,27 @@ export default function SignInPage() {
           <p style={{ color: 'var(--ink-2)', fontSize: 15, lineHeight: 1.6, margin: '0 0 32px' }}>
             Sign in to vote, or to create and manage an election.
           </p>
+
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <button type="button" onClick={() => signInWith('google')}>
+            <button type="button" className="oauth-btn" onClick={() => signInWith('google')}>
+              <span className="g-mark">G</span>
               Continue with Google
             </button>
-            <button type="button" onClick={() => signInWith('azure')}>
+            <button type="button" className="oauth-btn" onClick={() => signInWith('azure')}>
+              <span className="ms-mark">
+                <span style={{ background: 'var(--ink-2)' }} />
+                <span style={{ background: 'var(--seal)' }} />
+                <span style={{ background: 'var(--ledger)' }} />
+                <span style={{ background: 'var(--line-strong)' }} />
+              </span>
               Continue with Microsoft
             </button>
           </div>
+
+          <p style={{ color: 'var(--ink-2)', fontSize: 13, lineHeight: 1.6, margin: '28px 0 0' }}>
+            Your email address is only used to confirm you&apos;re eligible to vote — Quorum never posts on your
+            behalf.
+          </p>
         </div>
       </div>
     </div>

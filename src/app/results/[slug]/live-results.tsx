@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import type { ResultsSnapshot } from '@/lib/queries/results';
+import { initialsFor, colorForIndex } from '@/lib/avatar';
+import { toRoman } from '@/lib/roman';
 
 export function LiveResults({ slug, initialSnapshot }: { slug: string; initialSnapshot: ResultsSnapshot }) {
   const [snapshot, setSnapshot] = useState(initialSnapshot);
@@ -23,12 +25,74 @@ export function LiveResults({ slug, initialSnapshot }: { slug: string; initialSn
   }, [slug]);
 
   return (
-    <div>
-      <h1>{snapshot.title}</h1>
-      <p>{snapshot.organizationName}</p>
-      {/* TODO: the per-position candidate bars are not built yet.
-          snapshot.positions[].candidates[].voteCount is fetched and kept
-          live via polling above, but nothing renders it. */}
-    </div>
+    <>
+      <div style={{ maxWidth: 820, margin: '0 auto', width: '100%', padding: '24px 24px 64px', flexGrow: 1 }}>
+        <p style={{ fontSize: 14, color: 'var(--ink-2)', margin: '0 0 4px' }}>{snapshot.organizationName}</p>
+        <h1 style={{ fontSize: 'clamp(26px,4vw,34px)', margin: '0 0 16px' }}>{snapshot.title}</h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: 'var(--ink-2)' }}>
+          <span aria-hidden="true" style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--ledger)', display: 'inline-block' }} />
+          Live results. Updates automatically as votes are cast.
+        </div>
+
+        {snapshot.positions.map((pos, pi) => {
+          const total = pos.candidates.reduce((sum, c) => sum + c.voteCount, 0);
+          const maxVotes = Math.max(0, ...pos.candidates.map((c) => c.voteCount));
+          return (
+            <div className="position-block" key={pos.id}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 24 }}>
+                <span style={{ fontFamily: "'Fraunces', serif", fontStyle: 'italic', fontSize: 18, color: 'var(--ink-2)' }}>
+                  {toRoman(pi + 1)}.
+                </span>
+                <h2 style={{ fontSize: 22 }}>{pos.title}</h2>
+              </div>
+              {pos.candidates.map((cand, ci) => {
+                const isLeader = total > 0 && cand.voteCount === maxVotes;
+                const pct = total > 0 ? Math.round((cand.voteCount / total) * 100) : 0;
+                return (
+                  <div style={{ marginBottom: 20 }} key={cand.id}>
+                    <div className="candidate-line">
+                      <div className="candidate-name-group">
+                        <div className="avatar" style={{ background: colorForIndex(ci) }}>
+                          {initialsFor(cand.name)}
+                        </div>
+                        <span
+                          style={{
+                            fontWeight: isLeader ? 600 : 500,
+                            fontSize: 16,
+                            color: isLeader ? 'var(--seal-dark)' : 'var(--ink)',
+                          }}
+                        >
+                          {cand.name}
+                        </span>
+                      </div>
+                      <span
+                        style={{
+                          fontFamily: "'Fraunces', serif",
+                          fontSize: 20,
+                          color: isLeader ? 'var(--seal-dark)' : 'var(--ink-2)',
+                        }}
+                      >
+                        {cand.voteCount}
+                      </span>
+                    </div>
+                    <div className="bar-track">
+                      <div
+                        className="bar-fill"
+                        style={{ width: `${pct}%`, background: isLeader ? 'var(--seal)' : 'var(--ink-2)' }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })}
+      </div>
+
+      <footer style={{ borderTop: '1px solid var(--line)', padding: '24px clamp(24px,5vw,64px)', fontSize: 13, color: 'var(--ink-2)' }}>
+        Results are shown as they&apos;re recorded. No one, including the election&apos;s organizer, can see how any
+        individual person voted.
+      </footer>
+    </>
   );
 }
