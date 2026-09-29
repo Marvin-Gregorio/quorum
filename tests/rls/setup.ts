@@ -67,7 +67,12 @@ export async function createClientAs(email: string) {
       global: { headers: { Authorization: `Bearer ${verifyData.session!.access_token}` } },
     }
   );
-  return { client, userId: user.id };
+  // `client` above only carries the access token as a request header — its
+  // own in-memory auth state is never populated (persistSession is
+  // disabled), so `client.auth.getSession()` would return null. Callers that
+  // need the actual session object (e.g. to seed a browser cookie for e2e
+  // tests) should use `session` instead.
+  return { client, userId: user.id, session: verifyData.session! };
 }
 
 export function createServiceRoleClient() {
