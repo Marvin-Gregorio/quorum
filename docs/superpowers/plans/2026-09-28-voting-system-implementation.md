@@ -110,7 +110,7 @@ tests/
 
 Run:
 ```bash
-npx create-next-app@latest . --typescript --tailwind --app --no-src-dir=false --import-alias "@/*" --eslint
+npx create-next-app@latest . --typescript --tailwind --app --src-dir --import-alias "@/*" --eslint
 ```
 Accept defaults where prompted. This creates `package.json`, `tsconfig.json`, `next.config.mjs`, `tailwind.config.ts`, `src/app/layout.tsx`, `src/app/page.tsx`, `src/app/globals.css`.
 
