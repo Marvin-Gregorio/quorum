@@ -28,11 +28,15 @@ export async function getBallot(
     .eq('page_id', page.id)
     .order('display_order');
 
-  const { data: myVotes } = await supabase
-    .from('votes')
-    .select('position_id, candidate_id')
-    .eq('voter_id', voterId)
-    .eq('voter_id', voterId);
+  const positionIds = (positionRows ?? []).map((p: any) => p.id);
+
+  const { data: myVotes } = positionIds.length
+    ? await supabase
+        .from('votes')
+        .select('position_id, candidate_id')
+        .eq('voter_id', voterId)
+        .in('position_id', positionIds)
+    : { data: [] };
 
   const selectedByPosition = new Map((myVotes ?? []).map((v: any) => [v.position_id, v.candidate_id]));
 

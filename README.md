@@ -1,36 +1,73 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Quorum — voting system
 
-## Getting Started
+A Next.js app (App Router) backed by Supabase (Postgres + Auth + Storage +
+Realtime) for running org-wide elections: positions, candidates, domain-gated
+private elections, live results, and RLS-enforced ballot secrecy.
 
-First, run the development server:
+## Requirements
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- Node.js. The app itself targets Next's supported Node range, but the
+  **test suites specifically require Node >= 22** (`@supabase/supabase-js`'s
+  realtime client depends on APIs only available from Node 22 onward). If
+  `node -v` reports something older, install Node 22+ (e.g. via `nvm` or
+  Homebrew) before running `npm run test:rls` or `npm run test:e2e`.
+- The [Supabase CLI](https://supabase.com/docs/guides/cli) (`npx supabase`,
+  no separate install needed) and Docker, for running a local Supabase stack.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Setup
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Clone the repo and install dependencies:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+   ```bash
+   npm install
+   ```
 
-## Learn More
+2. Copy the environment example file and fill in your Supabase project's
+   credentials:
 
-To learn more about Next.js, take a look at the following resources:
+   ```bash
+   cp .env.local.example .env.local
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+   `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` come from
+   your Supabase project settings (or from `npx supabase status` if you're
+   running the stack locally — see below).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+3. Run a local Supabase stack (recommended for development), or link to a
+   hosted project instead:
 
-## Deploy on Vercel
+   ```bash
+   npx supabase start
+   ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+   This starts Postgres, Auth, Storage, and Realtime locally via Docker and
+   prints the local API URL and keys to use in `.env.local`. Alternatively,
+   run `npx supabase link` to point at a hosted Supabase project.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+4. Apply database migrations:
+
+   ```bash
+   npx supabase migration up --local
+   ```
+
+   (Drop `--local` if you're migrating a linked hosted project instead.)
+
+5. Start the dev server:
+
+   ```bash
+   npm run dev
+   ```
+
+   Open [http://localhost:3000](http://localhost:3000).
+
+## Tests
+
+- `npm run test:unit` — unit tests (`tests/unit`), no external services
+  required.
+- `npm run test:rls` — RLS/integration tests (`tests/rls`) against a real
+  local Supabase stack. Requires `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and
+  `SUPABASE_SERVICE_ROLE_KEY` in the test environment (see `.env.test`,
+  populated from `npx supabase status` after `npx supabase start`). Needs
+  Node >= 22 (see Requirements above).
+- `npm run test:e2e` — Playwright end-to-end tests (`tests/e2e`). Also needs
+  a running local Supabase stack and Node >= 22.

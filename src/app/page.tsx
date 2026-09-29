@@ -19,7 +19,6 @@ export default function HomePage() {
         </p>
         <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'center' }}>
           <Link href="/create">Create an election</Link>
-          <Link href="/results/example">See a live example</Link>
         </div>
       </section>
     </div>

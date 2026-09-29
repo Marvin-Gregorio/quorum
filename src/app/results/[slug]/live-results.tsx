@@ -8,8 +8,16 @@ export function LiveResults({ slug, initialSnapshot }: { slug: string; initialSn
 
   useEffect(() => {
     const interval = setInterval(async () => {
-      const response = await fetch(`/api/results/${slug}`);
-      if (response.ok) setSnapshot(await response.json());
+      // Skip polling while the tab isn't visible, so results don't keep
+      // fetching forever in a backgrounded tab.
+      if (document.hidden) return;
+      try {
+        const response = await fetch(`/api/results/${slug}`);
+        if (response.ok) setSnapshot(await response.json());
+      } catch {
+        // A transient network failure shouldn't crash the poll loop or
+        // produce an unhandled rejection; just try again next tick.
+      }
     }, 6000);
     return () => clearInterval(interval);
   }, [slug]);
@@ -18,9 +26,9 @@ export function LiveResults({ slug, initialSnapshot }: { slug: string; initialSn
     <div>
       <h1>{snapshot.title}</h1>
       <p>{snapshot.organizationName}</p>
-      {/* Per-position candidate bars port directly from the validated
-          Results.dc.html design; snapshot.positions[].candidates[].voteCount
-          drives each bar's width exactly as that design computed it. */}
+      {/* TODO: the per-position candidate bars are not built yet.
+          snapshot.positions[].candidates[].voteCount is fetched and kept
+          live via polling above, but nothing renders it. */}
     </div>
   );
 }

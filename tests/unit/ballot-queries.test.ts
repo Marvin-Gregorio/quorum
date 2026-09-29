@@ -44,7 +44,13 @@ describe('getBallot', () => {
           };
         }
         if (table === 'votes') {
-          return { select: () => ({ eq: () => ({ eq: async () => ({ data: [{ position_id: 'pos-1', candidate_id: 'cand-2' }], error: null }) }) }) };
+          return {
+            select: () => ({
+              eq: () => ({
+                in: async () => ({ data: [{ position_id: 'pos-1', candidate_id: 'cand-2' }], error: null }),
+              }),
+            }),
+          };
         }
         throw new Error(`unexpected table ${table}`);
       },
