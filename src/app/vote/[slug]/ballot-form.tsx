@@ -14,8 +14,11 @@ export function BallotForm({ ballot }: { ballot: Ballot }) {
   const [error, setError] = useState<string | null>(null);
   const [justCast, setJustCast] = useState(false);
 
+  const allSelected = ballot.positions.length > 0 && ballot.positions.every((p) => !!selections[p.id]);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!allSelected) return;
     setSubmitting(true);
     setError(null);
     setJustCast(false);
@@ -117,9 +120,16 @@ export function BallotForm({ ballot }: { ballot: Ballot }) {
         }}
       >
         <p style={{ margin: 0, fontSize: 14, color: 'var(--ink-2)', maxWidth: '46ch' }}>
-          You can change your vote anytime before voting closes.
+          {allSelected
+            ? 'You can change your vote anytime before voting closes.'
+            : 'Choose a candidate for every position to cast your vote.'}
         </p>
-        <button type="submit" className="primary-btn" style={{ padding: '14px 32px', fontSize: 16 }} disabled={submitting}>
+        <button
+          type="submit"
+          className="primary-btn"
+          style={{ padding: '14px 32px', fontSize: 16 }}
+          disabled={submitting || !allSelected}
+        >
           {submitting ? 'Casting…' : 'Cast your vote'}
         </button>
       </div>

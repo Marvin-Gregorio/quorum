@@ -22,3 +22,8 @@ export const candidateSchema = z.object({
   name: z.string().trim().min(1).max(100),
   bio: z.string().trim().max(500),
 });
+
+export const voteSchema = z.object({
+  positionId: z.string().uuid(),
+  candidateId: z.string().uuid(),
+});

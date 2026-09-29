@@ -73,6 +73,8 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
   white-space: nowrap;
 }
 .primary-btn:hover { background: var(--seal-dark); border-color: var(--seal-dark); }
+.primary-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.primary-btn:disabled:hover { background: var(--seal); border-color: var(--seal); }
 
 .secondary-btn {
   background: none;

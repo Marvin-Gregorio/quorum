@@ -24,7 +24,8 @@ export async function getBallot(
 
   const { data: positionRows } = await supabase
     .from('positions')
-    .select('id, title, candidates(id, name, bio, photo_url)')
+    // See manage.ts for why the FK name must be spelled out here.
+    .select('id, title, candidates!candidates_position_id_fkey(id, name, bio, photo_url)')
     .eq('page_id', page.id)
     .order('display_order');
 

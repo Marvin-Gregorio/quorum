@@ -29,7 +29,11 @@ export async function getManagedElection(
 
   const { data: positionRows } = await supabase
     .from('positions')
-    .select('id, title, candidates(id, name, bio, photo_url)')
+    // `candidates!candidates_position_id_fkey` disambiguates this embed:
+    // vote_tallies also has FKs to both positions and candidates, so
+    // PostgREST otherwise sees two valid relationship paths and refuses
+    // the query (PGRST201) instead of guessing which one is meant.
+    .select('id, title, candidates!candidates_position_id_fkey(id, name, bio, photo_url)')
     .eq('page_id', page.id)
     .order('display_order');
 
