@@ -12,10 +12,12 @@ vi.mock('@/lib/supabase/server', () => ({
         return {
           update: (row: any) => ({
             eq: (_col: string, id: string) => ({
-              eq: (_col2: string, ownerId: string) => {
-                updates.push({ id, ownerId, row });
-                return Promise.resolve({ error: null });
-              },
+              eq: (_col2: string, ownerId: string) => ({
+                select: (_col3: string) => {
+                  updates.push({ id, ownerId, row });
+                  return Promise.resolve({ data: [{ id }], error: null });
+                },
+              }),
             }),
           }),
         };

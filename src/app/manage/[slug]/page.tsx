@@ -9,17 +9,27 @@ export default async function ManagePage({ params }: { params: Promise<{ slug: s
   const supabase = await createServerSupabaseClient();
   const { data: userData } = await supabase.auth.getUser();
 
+  // A signed-out visitor hits RLS before ever seeing this page's row: a
+  // private page's "pages" select policy returns nothing for the anon role,
+  // so getManagedElection below would come back null regardless of whether
+  // the page actually exists, which previously sent every signed-out
+  // visitor to '/' instead of prompting them to sign in. Check sign-in
+  // status first so that case is distinguishable.
+  if (!userData.user) {
+    redirect(`/sign-in?next=${encodeURIComponent(`/manage/${slug}`)}`);
+  }
+
   const election = await getManagedElection(supabase, slug);
   if (!election) redirect('/');
 
   const access = await checkPageAccess(
     supabase,
     { id: election.id, is_private: election.isPrivate, owner_id: election.ownerId },
-    userData.user?.id ?? null,
-    userData.user?.email ?? null
+    userData.user.id,
+    userData.user.email ?? null
   );
-  if (access === 'sign-in') redirect('/sign-in');
-  if (access === 'restricted' || userData.user?.id !== election.ownerId) redirect('/access-restricted');
+  if (access === 'sign-in') redirect(`/sign-in?next=${encodeURIComponent(`/manage/${slug}`)}`);
+  if (access === 'restricted' || userData.user.id !== election.ownerId) redirect('/access-restricted');
 
   const positionIds = election.positions.map((p) => p.id);
 
@@ -48,10 +58,11 @@ export default async function ManagePage({ params }: { params: Promise<{ slug: s
     <div>
       <h1>{election.title}</h1>
       <p>{election.organizationName}</p>
-      {/* Positions/candidates roster and settings modal (Task 18's actions,
-          this task's data) port directly from the validated Manage.dc.html
-          design — its state shape (positions array with nested candidates,
-          candidateModal/settingsModal) maps onto ManagedElection one for one. */}
+      {/* TODO: the positions/candidates roster and settings modal are not
+          built yet. The actions in ./actions.ts and the data shape in
+          ManagedElection (positions[] with nested candidates) exist, but no
+          UI here calls createPositionAction/updateCandidateAction/etc. or
+          opens a settings/candidate modal. */}
       <RealtimePanel
         pageId={election.id}
         positionIds={positionIds}

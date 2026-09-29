@@ -17,17 +17,22 @@ vi.mock('@/lib/supabase/server', () => ({
           }),
         }),
         update: (row: any) => ({
-          eq: async (_col: string, id: string) => {
-            const found = state.candidates.find((c) => c.id === id);
-            if (found) Object.assign(found, row);
-            return { error: null };
-          },
+          eq: (_col: string, id: string) => ({
+            select: async (_col2: string) => {
+              const found = state.candidates.find((c) => c.id === id);
+              if (found) Object.assign(found, row);
+              return { data: found ? [{ id: found.id }] : [], error: null };
+            },
+          }),
         }),
         delete: () => ({
-          eq: async (_col: string, id: string) => {
-            state.candidates = state.candidates.filter((c) => c.id !== id);
-            return { error: null };
-          },
+          eq: (_col: string, id: string) => ({
+            select: async (_col2: string) => {
+              const existed = state.candidates.some((c) => c.id === id);
+              state.candidates = state.candidates.filter((c) => c.id !== id);
+              return { data: existed ? [{ id }] : [], error: null };
+            },
+          }),
         }),
       };
     },

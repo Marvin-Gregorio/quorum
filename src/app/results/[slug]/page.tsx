@@ -18,7 +18,7 @@ export default async function ResultsPage({ params }: { params: Promise<{ slug: 
   if (page.is_private) {
     const { data: userData } = await supabase.auth.getUser();
     const access = await checkPageAccess(supabase, page, userData.user?.id ?? null, userData.user?.email ?? null);
-    if (access === 'sign-in') redirect('/sign-in');
+    if (access === 'sign-in') redirect(`/sign-in?next=${encodeURIComponent(`/results/${slug}`)}`);
     if (access === 'restricted') redirect('/access-restricted');
   }
 

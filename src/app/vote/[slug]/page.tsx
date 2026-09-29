@@ -16,7 +16,7 @@ export default async function BallotPage({ params }: { params: Promise<{ slug: s
   if (!page) redirect('/');
 
   const access = await checkPageAccess(supabase, page, userData.user?.id ?? null, userData.user?.email ?? null);
-  if (access === 'sign-in') redirect('/sign-in');
+  if (access === 'sign-in') redirect(`/sign-in?next=${encodeURIComponent(`/vote/${slug}`)}`);
   if (access === 'restricted') redirect('/access-restricted');
 
   const ballot = await getBallot(supabase, slug, userData.user!.id);
@@ -26,11 +26,11 @@ export default async function BallotPage({ params }: { params: Promise<{ slug: s
     <div>
       <h1>{ballot.title}</h1>
       <p>{ballot.organizationName}</p>
-      {/* Position/candidate radio-bubble ballot rows and the sticky "Cast
-          your vote" bar port directly from the validated Vote.dc.html /
-          VoteMobile.dc.html design; ballot.positions[].selectedCandidateId
-          drives which radio starts checked, satisfying spec §10's
-          "pre-fill a returning voter's prior choice" requirement. */}
+      {/* TODO: the position/candidate radio-bubble ballot rows and the
+          sticky "Cast your vote" bar are not built yet. ballot.positions[]
+          (with selectedCandidateId already carrying a returning voter's
+          prior choice, per spec §10) is fetched above, but nothing renders
+          it or calls the vote-casting action in ./actions.ts. */}
     </div>
   );
 }

@@ -7,6 +7,9 @@ vi.mock('@/lib/supabase/server', () => ({
     from: (table: string) => {
       if (table !== 'positions') throw new Error(`unexpected table ${table}`);
       return {
+        select: (_col: string, _opts?: any) => ({
+          eq: async (_col2: string, _pageId: string) => ({ count: state.positions.length, error: null }),
+        }),
         insert: (row: any) => ({
           select: () => ({
             single: async () => {
@@ -17,10 +20,13 @@ vi.mock('@/lib/supabase/server', () => ({
           }),
         }),
         delete: () => ({
-          eq: async (_col: string, id: string) => {
-            state.positions = state.positions.filter((p) => p.id !== id);
-            return { error: null };
-          },
+          eq: (_col: string, id: string) => ({
+            select: async (_col2: string) => {
+              const existed = state.positions.some((p) => p.id === id);
+              state.positions = state.positions.filter((p) => p.id !== id);
+              return { data: existed ? [{ id }] : [], error: null };
+            },
+          }),
         }),
       };
     },

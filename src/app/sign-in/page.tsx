@@ -6,9 +6,23 @@ export default function SignInPage() {
   const supabase = createBrowserSupabaseClient();
 
   async function signInWith(provider: 'google' | 'azure') {
+    // Thread the caller's intended destination (e.g. a voter who followed a
+    // link to /vote/some-slug and had to sign in first) through the OAuth
+    // round trip as a `next` query param, so the callback route can send
+    // them back to it instead of always landing on /profile.
+    const next = new URLSearchParams(window.location.search).get('next');
+    const callbackUrl = new URL('/auth/callback', window.location.origin);
+    if (next) callbackUrl.searchParams.set('next', next);
+
     await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: {
+        redirectTo: callbackUrl.toString(),
+        // Azure/Microsoft requires the `email` scope to actually return an
+        // email claim (per Supabase's Azure provider docs); Google returns
+        // it without an extra scope.
+        ...(provider === 'azure' ? { scopes: 'email' } : {}),
+      },
     });
   }
 

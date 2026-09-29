@@ -26,7 +26,7 @@ export async function updateElectionSettingsAction(
   const { data: userData } = await supabase.auth.getUser();
   if (!userData.user) return { error: 'You must be signed in.' };
 
-  const { error } = await supabase
+  const { data: updatedRows, error } = await supabase
     .from('pages')
     .update({
       organization_name: sanitizeText(input.organizationName),
@@ -36,17 +36,37 @@ export async function updateElectionSettingsAction(
       voting_ends_at: input.votingEndsAt,
     })
     .eq('id', pageId)
-    .eq('owner_id', userData.user.id);
+    .eq('owner_id', userData.user.id)
+    .select('id');
 
-  if (error) return { error: 'Could not save settings.' };
+  if (error || !updatedRows || updatedRows.length === 0) return { error: 'Could not save settings.' };
 
   await supabase.from('allowed_domains').delete().eq('page_id', pageId);
   if (input.isPrivate && input.domains.length > 0) {
-    await supabase
-      .from('allowed_domains')
-      .insert(input.domains.map((domain) => ({ page_id: pageId, domain: sanitizeText(domain) })));
+    const { error: domainsError } = await supabase.from('allowed_domains').insert(
+      input.domains.map((domain) => ({
+        page_id: pageId,
+        domain: sanitizeText(domain).toLowerCase().trim(),
+      }))
+    );
+    if (domainsError) return { error: 'Settings were saved, but the allowed domains could not be updated.' };
   }
 
+  return { ok: true };
+}
+
+export async function updateCandidatePhotoAction(
+  candidateId: string,
+  photoUrl: string
+): Promise<{ ok: true } | { error: string }> {
+  const supabase = await createServerSupabaseClient();
+  const { data, error } = await supabase
+    .from('candidates')
+    .update({ photo_url: photoUrl })
+    .eq('id', candidateId)
+    .select('id');
+
+  if (error || !data || data.length === 0) return { error: 'Could not save the candidate photo.' };
   return { ok: true };
 }
 
@@ -76,19 +96,22 @@ export async function updateCandidateAction(
   if (!result.success) return { error: result.error.issues[0].message };
 
   const supabase = await createServerSupabaseClient();
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('candidates')
     .update({ name: sanitizeText(input.name), bio: sanitizeText(input.bio) })
-    .eq('id', candidateId);
+    .eq('id', candidateId)
+    .select('id');
 
-  if (error) return { error: 'Could not save the candidate.' };
+  if (error || !data || data.length === 0) return { error: 'Could not save the candidate.' };
   return { ok: true };
 }
 
 export async function deleteCandidateAction(candidateId: string): Promise<{ ok: true } | { error: string }> {
   const supabase = await createServerSupabaseClient();
-  const { error } = await supabase.from('candidates').delete().eq('id', candidateId);
-  if (error) return { error: 'Could not delete the candidate. Positions may be locked once voting opens.' };
+  const { data, error } = await supabase.from('candidates').delete().eq('id', candidateId).select('id');
+  if (error || !data || data.length === 0) {
+    return { error: 'Could not delete the candidate. Positions may be locked once voting opens.' };
+  }
   return { ok: true };
 }
 
@@ -100,9 +123,14 @@ export async function createPositionAction(
   if (!result.success) return { error: result.error.issues[0].message };
 
   const supabase = await createServerSupabaseClient();
+  const { count } = await supabase
+    .from('positions')
+    .select('id', { count: 'exact', head: true })
+    .eq('page_id', pageId);
+
   const { data, error } = await supabase
     .from('positions')
-    .insert({ page_id: pageId, title: sanitizeText(title), display_order: 0 })
+    .insert({ page_id: pageId, title: sanitizeText(title), display_order: count ?? 0 })
     .select()
     .single();
 
@@ -112,7 +140,9 @@ export async function createPositionAction(
 
 export async function deletePositionAction(positionId: string): Promise<{ ok: true } | { error: string }> {
   const supabase = await createServerSupabaseClient();
-  const { error } = await supabase.from('positions').delete().eq('id', positionId);
-  if (error) return { error: 'Positions can only be removed before voting opens.' };
+  const { data, error } = await supabase.from('positions').delete().eq('id', positionId).select('id');
+  if (error || !data || data.length === 0) {
+    return { error: 'Positions can only be removed before voting opens.' };
+  }
   return { ok: true };
 }

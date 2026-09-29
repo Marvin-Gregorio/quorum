@@ -1,5 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
 
+// Computed relative to "now" (rather than hardcoded past dates) so this test
+// doesn't drift into the past and start tripping createElectionAction's
+// "voting must start in the future" validation as real time passes.
+const FUTURE_STARTS_AT = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+const FUTURE_ENDS_AT = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+
 const insertedRows: Record<string, any[]> = { pages: [], positions: [], candidates: [], allowed_domains: [] };
 
 // The real action code awaits some inserts bare (allowed_domains, candidates)
@@ -36,8 +42,8 @@ describe('createElectionAction', () => {
     const result = await createElectionAction({
       organizationName: 'Riverside Tenants Cooperative',
       title: '2026 Board Election',
-      votingStartsAt: '2026-02-28T09:00:00.000Z',
-      votingEndsAt: '2026-03-14T17:00:00.000Z',
+      votingStartsAt: FUTURE_STARTS_AT,
+      votingEndsAt: FUTURE_ENDS_AT,
       isPrivate: true,
       domains: ['riverside.coop'],
       positions: [
@@ -59,8 +65,8 @@ describe('createElectionAction', () => {
     const result = await createElectionAction({
       organizationName: 'Riverside Tenants Cooperative',
       title: '',
-      votingStartsAt: '2026-02-28T09:00:00.000Z',
-      votingEndsAt: '2026-03-14T17:00:00.000Z',
+      votingStartsAt: FUTURE_STARTS_AT,
+      votingEndsAt: FUTURE_ENDS_AT,
       isPrivate: false,
       domains: [],
       positions: [],

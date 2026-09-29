@@ -13,13 +13,20 @@ export default function CreateElectionPage() {
   const [title, setTitle] = useState('');
   const [votingStartsAt, setVotingStartsAt] = useState('');
   const [votingEndsAt, setVotingEndsAt] = useState('');
-  const [isPrivate, setIsPrivate] = useState(true);
+  // Spec §2: elections are public by default. A full privacy toggle UI is
+  // separately tracked (out of scope here) — this just fixes the default so
+  // elections created through this shell are actually reachable by voters.
+  const [isPrivate, setIsPrivate] = useState(false);
   const [domains, setDomains] = useState<string[]>([]);
   const [positions, setPositions] = useState<Position[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!votingStartsAt || !votingEndsAt) {
+      setError('Please set both an opening and closing date/time for voting.');
+      return;
+    }
     const input: CreateElectionInput = {
       organizationName,
       title,
@@ -52,12 +59,12 @@ export default function CreateElectionPage() {
       <input id="opens" type="datetime-local" value={votingStartsAt} onChange={(e) => setVotingStartsAt(e.target.value)} />
       <label htmlFor="closes">Closes</label>
       <input id="closes" type="datetime-local" value={votingEndsAt} onChange={(e) => setVotingEndsAt(e.target.value)} />
-      {/* Public/private radio + domain chip editor, and the position/candidate
-          list with its add-candidate modal, port directly from the validated
-          CreateElection.dc.html design (positions/candidates state shape and
-          modal open/close logic already match Position/Candidate above one
-          for one) — omitted here for brevity since it's a direct port with
-          no new logic beyond what's shown. */}
+      {/* TODO: the public/private radio + domain chip editor, and the
+          position/candidate list with its add-candidate modal, are not
+          built yet. This shell only submits organizationName/title/dates
+          with an empty positions array and the isPrivate default above —
+          intended state shape (Position/Candidate types) is sketched at the
+          top of this file, but no UI reads or writes it yet. */}
       <button type="submit">Create election</button>
     </form>
   );
