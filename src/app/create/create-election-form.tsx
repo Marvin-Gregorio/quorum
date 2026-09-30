@@ -26,6 +26,7 @@ import {
   avatarClass,
   avatarImgClass,
 } from '@/lib/ui-classes';
+import Image from 'next/image';
 
 type Candidate = { id: string; name: string; bio: string; photoFile: File | null; previewUrl: string | null };
 type Position = { id: string; title: string; candidates: Candidate[] };
@@ -362,7 +363,7 @@ export function CreateElectionForm() {
                     <div className={cn(CANDIDATE_ROW, 'items-start')} key={cand.id}>
                       <div className="flex items-start gap-3.5">
                         {cand.previewUrl ? (
-                          <img src={cand.previewUrl} alt="" className={avatarImgClass('sm')} />
+                          <Image src={cand.previewUrl} alt={'candidate profile pic'} className={avatarImgClass('sm')}/>
                         ) : (
                           <div className={cn(avatarClass('sm'), colorClassForIndex(ci))}>
                             {initialsFor(cand.name)}
@@ -424,7 +425,7 @@ export function CreateElectionForm() {
 
             <div className="flex items-center gap-4 mb-6">
               {modal.previewUrl ? (
-                <img src={modal.previewUrl} alt="" className="w-[72px] h-[72px] rounded-full object-cover shrink-0" />
+                <Image src={modal.previewUrl} alt={'candidate profile pic'} className="w-[72px] h-[72px] rounded-full object-cover shrink-0"/>
               ) : (
                 <div
                   className={cn(

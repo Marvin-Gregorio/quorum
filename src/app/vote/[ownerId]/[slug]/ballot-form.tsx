@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { castVoteAction } from './actions';
 import { initialsFor, colorClassForIndex } from '@/lib/avatar';
 import { cn } from '@/lib/cn';
@@ -93,7 +94,7 @@ export function BallotForm({ ballot }: { ballot: Ballot }) {
                   onChange={() => setSelections((prev) => ({ ...prev, [pos.id]: cand.id }))}
                 />
                 {cand.photoUrl ? (
-                  <img src={cand.photoUrl} alt="" className={avatarImgClass('md')} />
+                  <Image src={cand.photoUrl} alt="" width={48} height={48} className={avatarImgClass('md')} />
                 ) : (
                   <div className={cn(avatarClass('md'), colorClassForIndex(ci))}>
                     {initialsFor(cand.name)}

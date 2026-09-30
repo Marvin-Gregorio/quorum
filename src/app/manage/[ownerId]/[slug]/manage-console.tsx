@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import Image from 'next/image';
 import { createBrowserSupabaseClient } from '@/lib/supabase/client';
 import { updateElectionSettingsAction, updateCandidateAction } from './actions';
 import { CandidatePhotoUpload } from './candidate-photo-upload';
@@ -365,7 +366,7 @@ export function ManageConsole({
               <div className={cn(CANDIDATE_ROW, 'items-start')} key={cand.id}>
                 <div className="flex items-start gap-3.5">
                   {cand.photoUrl ? (
-                    <img src={cand.photoUrl} alt="" className={avatarImgClass('md')} />
+                    <Image src={cand.photoUrl} alt="" width={48} height={48} className={avatarImgClass('md')} />
                   ) : (
                     <div className={cn(avatarClass('md'), colorClassForIndex(ci))}>
                       {initialsFor(cand.name)}
@@ -404,7 +405,13 @@ export function ManageConsole({
             )}
             <div className="flex items-center gap-4 mb-6">
               {candidateModal.photoUrl ? (
-                <img src={candidateModal.photoUrl} alt="" className="w-[72px] h-[72px] rounded-full object-cover shrink-0" />
+                <Image
+                  src={candidateModal.photoUrl}
+                  alt=""
+                  width={72}
+                  height={72}
+                  className="rounded-full object-cover shrink-0"
+                />
               ) : (
                 <div className="w-[72px] h-[72px] rounded-full bg-line-strong flex items-center justify-center text-paper font-['Fraunces',serif] text-[22px] font-semibold shrink-0">
                   {initialsFor(candidateModal.name)}
