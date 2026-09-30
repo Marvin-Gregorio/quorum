@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # The RLS/e2e suites' Supabase realtime client needs Node >= 22 (see
+      # README's Requirements section) — use it for the whole job for
+      # consistency with local dev rather than switching versions mid-run.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run lint
+
+      - run: npm run test:unit
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      # `supabase start` boots Postgres/Auth/Storage/Realtime via Docker
+      # (preinstalled on GitHub-hosted runners) and applies every migration
+      # under supabase/migrations/ as part of bringing the stack up.
+      - run: supabase start
+
+      # tests/rls/setup.ts and the app's own Supabase clients read these
+      # exact env var names; `supabase status -o json` is the only way to
+      # get the local stack's generated anon/service-role keys at all, and
+      # both a SUPABASE_* (server/test) and NEXT_PUBLIC_SUPABASE_* (app)
+      # name are needed for the same two values.
+      - name: Export Supabase env vars
+        run: |
+          status=$(supabase status -o json)
+          {
+            echo "SUPABASE_URL=$(echo "$status" | jq -r '.API_URL')"
+            echo "NEXT_PUBLIC_SUPABASE_URL=$(echo "$status" | jq -r '.API_URL')"
+            echo "SUPABASE_ANON_KEY=$(echo "$status" | jq -r '.ANON_KEY')"
+            echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$(echo "$status" | jq -r '.ANON_KEY')"
+            echo "SUPABASE_SERVICE_ROLE_KEY=$(echo "$status" | jq -r '.SERVICE_ROLE_KEY')"
+          } >> "$GITHUB_ENV"
+
+      - run: npm run test:rls
+
+      - run: npm run build
