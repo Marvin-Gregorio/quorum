@@ -110,7 +110,7 @@ tests/
 
 Run:
 ```bash
-npx create-next-app@latest . --typescript --tailwind --app --no-src-dir=false --import-alias "@/*" --eslint
+npx create-next-app@latest . --typescript --tailwind --app --src-dir --import-alias "@/*" --eslint
 ```
 Accept defaults where prompted. This creates `package.json`, `tsconfig.json`, `next.config.mjs`, `tailwind.config.ts`, `src/app/layout.tsx`, `src/app/page.tsx`, `src/app/globals.css`.
 
@@ -198,7 +198,7 @@ export default defineConfig({
   plugins: [react()],
   test: {
     environment: 'jsdom',
-    include: ['tests/unit/**/*.test.ts', 'tests/unit/**/*.test.tsx'],
+    include: ['tests/unit/**/*.test.ts', 'tests/unit/**/*.test.tsx', 'tests/rls/**/*.test.ts'],
   },
 });
 ```
@@ -828,7 +828,26 @@ create policy "candidates are deletable by owner before voting starts"
 
 Run: `npx supabase db push`
 
-- [ ] **Step 3: Write the RLS test helper**
+- [ ] **Step 3: Set the RLS test environment variables**
+
+RLS tests run against a real linked Supabase project, so they need real
+credentials that vitest doesn't auto-load the way Next.js loads
+`.env.local`. Export these in the shell that runs `npm run test:rls` (or put
+them in a `.env.test` file and `source` it first — do not commit this
+file):
+
+```bash
+export SUPABASE_URL="https://your-project.supabase.co"
+export SUPABASE_ANON_KEY="your-anon-key"
+export SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
+```
+
+`SUPABASE_URL`/`SUPABASE_ANON_KEY` are the same project as `.env.local`
+(Task 2); `SUPABASE_SERVICE_ROLE_KEY` is the separate service-role secret
+from the same project's API settings — never expose it to the browser or
+commit it.
+
+- [ ] **Step 4: Write the RLS test helper**
 
 ```ts
 // tests/rls/setup.ts
@@ -889,7 +908,7 @@ export function createServiceRoleClient() {
 }
 ```
 
-- [ ] **Step 4: Write the failing edit-window test**
+- [ ] **Step 5: Write the failing edit-window test**
 
 ```ts
 // tests/rls/edit-window.test.ts
@@ -957,12 +976,12 @@ describe('structural edit window', () => {
 });
 ```
 
-- [ ] **Step 5: Run the test and confirm both pass**
+- [ ] **Step 6: Run the test and confirm both pass**
 
 Run: `npm run test:rls -- edit-window` (add `"test:rls": "vitest run tests/rls"` to `package.json` scripts first)
 Expected: PASS (2 tests) — the first test passes because the INSERT is correctly rejected, not because anything is broken; this is asserting the RLS policy's rejection behavior, not a red/green TDD cycle against not-yet-written app code.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
 git add supabase/migrations/0004_rls_positions_candidates.sql tests/rls/setup.ts tests/rls/edit-window.test.ts package.json
@@ -1969,20 +1988,29 @@ import { describe, it, expect, vi } from 'vitest';
 
 const insertedRows: Record<string, any[]> = { pages: [], positions: [], candidates: [], allowed_domains: [] };
 
+// The real action code awaits some inserts bare (allowed_domains, candidates)
+// and chains .select().single() on others (pages, positions). This mock's
+// insert() records the row immediately and returns an object that is BOTH
+// chainable and directly awaitable (via .then), so either calling style
+// works and is captured in insertedRows.
+function makeInsertResult(table: string, row: any) {
+  const rows = Array.isArray(row) ? row : [row];
+  const withIds = rows.map((r) => ({ id: `${table}-${insertedRows[table].length + 1}`, ...r }));
+  insertedRows[table].push(...withIds);
+  return {
+    select: () => ({ single: async () => ({ data: withIds[0], error: null }) }),
+    then(resolve: (value: { data: any[]; error: null }) => void) {
+      resolve({ data: withIds, error: null });
+    },
+  };
+}
+
 vi.mock('@/lib/supabase/server', () => ({
   createServerSupabaseClient: vi.fn(async () => ({
     auth: { getUser: async () => ({ data: { user: { id: 'owner-1' } } }) },
     from: (table: string) => ({
       select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null, error: null }) }) }),
-      insert: (row: any) => ({
-        select: () => ({
-          single: async () => {
-            const withId = { id: `${table}-${insertedRows[table].length + 1}`, ...row };
-            insertedRows[table].push(withId);
-            return { data: withId, error: null };
-          },
-        }),
-      }),
+      insert: (row: any) => makeInsertResult(table, row),
     }),
   })),
 }));
@@ -3475,7 +3503,6 @@ import { getResultsSnapshot } from '@/lib/queries/results';
 export async function GET(request: Request, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const supabase = await createServerSupabaseClient();
-  const { data: userData } = await supabase.auth.getUser();
 
   const { data: page } = await supabase
     .from('pages')
@@ -3484,15 +3511,18 @@ export async function GET(request: Request, { params }: { params: Promise<{ slug
     .maybeSingle();
   if (!page) return NextResponse.json({ error: 'not found' }, { status: 404 });
 
-  const access = await checkPageAccess(supabase, page, userData.user?.id ?? null, userData.user?.email ?? null);
-  if (access !== 'ok') return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  if (page.is_private) {
+    const { data: userData } = await supabase.auth.getUser();
+    const access = await checkPageAccess(supabase, page, userData.user?.id ?? null, userData.user?.email ?? null);
+    if (access !== 'ok') return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  }
 
   const snapshot = await getResultsSnapshot(supabase, slug);
   return NextResponse.json(snapshot);
 }
 ```
 
-Note: unlike the Ballot page, results are public once access passes — the polling route does not require sign-in beyond what `checkPageAccess` already enforces (a public page returns `'ok'` even for `userId: null`, since `checkPageAccess`'s `'sign-in'` branch only triggers for a private page or... re-check: looking at Task 16's implementation, `checkPageAccess` returns `'sign-in'` whenever `userId` is null, regardless of `is_private`. For a public results page that should be viewable with no sign-in at all (per spec §5's "results are public"), this route intentionally does not call `checkPageAccess` when `page.is_private` is `false` — adjust the check above to `if (page.is_private) { /* run checkPageAccess */ }` before allowing anonymous access through. Apply the same adjustment to Task 21's page Server Component below.
+Note: unlike the Ballot page, a public results page (`page.is_private === false`) is viewable with no sign-in at all, per spec §5 ("results are public"). `checkPageAccess` (Task 16) returns `'sign-in'` whenever `userId` is null, regardless of `is_private` — that check is designed for pages that always require sign-in (the ballot), so this route only calls it when `page.is_private` is `true`, skipping it entirely for public pages. Task 21's page Server Component below applies the same `if (page.is_private)` guard for the same reason.
 
 - [ ] **Step 6: Build the Results page and its polling client component**
 
