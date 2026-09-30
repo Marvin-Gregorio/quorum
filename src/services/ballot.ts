@@ -85,6 +85,9 @@ export async function castVote(
       { onConflict: 'voter_id,position_id' }
     );
 
-  if (error) return { error: 'Your vote could not be recorded. Voting may be closed for this election.' };
+  if (error) {
+    console.error(error);
+    return { error: 'Your vote could not be recorded. Voting may be closed for this election.' };
+  }
   return { ok: true };
 }

@@ -131,6 +131,7 @@ async function insertPageWithUniqueSlug(
       continue;
     }
 
+    if (pageError) console.error(pageError);
     return { error: 'Could not create the election. Please try again.' };
   }
 
@@ -149,6 +150,7 @@ async function insertAllowedDomains(
       domain: sanitizeText(domain).toLowerCase().trim(),
     }))
   );
+  if (error) console.error(error);
   return error ? { error: 'Could not save the allowed domains.' } : {};
 }
 
@@ -167,6 +169,7 @@ async function insertPositionsWithCandidates(
       .single();
 
     if (positionError || !createdPosition) {
+      if (positionError) console.error(positionError);
       return { error: 'The election was created, but one of its positions could not be saved.' };
     }
 
@@ -182,6 +185,7 @@ async function insertPositionsWithCandidates(
         .select()
         .single();
       if (candidateError || !createdCandidate) {
+        if (candidateError) console.error(candidateError);
         return { error: 'The election was created, but one of its candidates could not be saved.' };
       }
       createdCandidates.push({ name: candidate.name, id: createdCandidate.id });
@@ -245,7 +249,10 @@ export async function updateElectionSettings(
     .eq('owner_id', ownerId)
     .select('id');
 
-  if (error || !updatedRows || updatedRows.length === 0) return { error: 'Could not save settings.' };
+  if (error || !updatedRows || updatedRows.length === 0) {
+    if (error) console.error(error);
+    return { error: 'Could not save settings.' };
+  }
 
   await supabase.from('allowed_domains').delete().eq('page_id', pageId);
   if (input.isPrivate) {
@@ -267,7 +274,10 @@ export async function updateCandidatePhoto(
     .eq('id', candidateId)
     .select('id');
 
-  if (error || !data || data.length === 0) return { error: 'Could not save the candidate photo.' };
+  if (error || !data || data.length === 0) {
+    if (error) console.error(error);
+    return { error: 'Could not save the candidate photo.' };
+  }
   return { ok: true };
 }
 
@@ -282,7 +292,10 @@ export async function createCandidate(
     .select()
     .single();
 
-  if (error || !data) return { error: 'Could not add the candidate. Positions may be locked once voting opens.' };
+  if (error || !data) {
+    if (error) console.error(error);
+    return { error: 'Could not add the candidate. Positions may be locked once voting opens.' };
+  }
   return { id: data.id };
 }
 
@@ -297,7 +310,10 @@ export async function updateCandidate(
     .eq('id', candidateId)
     .select('id');
 
-  if (error || !data || data.length === 0) return { error: 'Could not save the candidate.' };
+  if (error || !data || data.length === 0) {
+    if (error) console.error(error);
+    return { error: 'Could not save the candidate.' };
+  }
   return { ok: true };
 }
 
@@ -307,6 +323,7 @@ export async function deleteCandidate(
 ): Promise<{ ok: true } | { error: string }> {
   const { data, error } = await supabase.from('candidates').delete().eq('id', candidateId).select('id');
   if (error || !data || data.length === 0) {
+    if (error) console.error(error);
     return { error: 'Could not delete the candidate. Positions may be locked once voting opens.' };
   }
   return { ok: true };
@@ -328,7 +345,10 @@ export async function createPosition(
     .select()
     .single();
 
-  if (error || !data) return { error: 'Positions can only be added before voting opens.' };
+  if (error || !data) {
+    if (error) console.error(error);
+    return { error: 'Positions can only be added before voting opens.' };
+  }
   return { id: data.id };
 }
 
@@ -338,6 +358,7 @@ export async function deletePosition(
 ): Promise<{ ok: true } | { error: string }> {
   const { data, error } = await supabase.from('positions').delete().eq('id', positionId).select('id');
   if (error || !data || data.length === 0) {
+    if (error) console.error(error);
     return { error: 'Positions can only be removed before voting opens.' };
   }
   return { ok: true };
