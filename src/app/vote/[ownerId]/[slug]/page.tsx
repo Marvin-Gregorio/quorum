@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { checkPageAccess } from '@/lib/access';
 import { getBallot } from '@/services/ballot';
-import { UserMenu } from '@/components/user-menu';
+import { Header } from '@/components/header';
 import { BallotForm } from './ballot-form';
 import { BREADCRUMB_LIST, BREADCRUMB_LINK } from '@/lib/ui-classes';
 
@@ -41,16 +41,9 @@ export default async function BallotPage({ params }: { params: Promise<{ ownerId
   const ballot = await getBallot(supabase, ownerId, slug, userData.user.id);
   if (!ballot) redirect('/');
 
-  const { data: profile } = await supabase.from('profiles').select('*').eq('id', userData.user.id).single();
-
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="flex justify-between items-center px-[clamp(24px,5vw,64px)] py-6 border-b border-line flex-wrap gap-2">
-        <div className="font-['Fraunces',serif] italic font-semibold text-xl">
-          Quorum
-        </div>
-        <UserMenu name={profile?.full_name ?? null} email={profile?.email ?? userData.user.email ?? null} />
-      </header>
+    <>
+      <Header />
 
       <nav aria-label="Breadcrumb" className="max-w-[720px] w-full mx-auto pt-4 px-6 pb-0">
         <ol className={BREADCRUMB_LIST}>
@@ -65,6 +58,6 @@ export default async function BallotPage({ params }: { params: Promise<{ ownerId
       </nav>
 
       <BallotForm ballot={ballot} />
-    </div>
+    </>
   );
 }

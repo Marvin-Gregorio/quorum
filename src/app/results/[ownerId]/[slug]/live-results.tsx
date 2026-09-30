@@ -123,10 +123,10 @@ export function LiveResults({
         })}
       </div>
 
-      <footer className="border-t border-line py-6 px-[clamp(24px,5vw,64px)] text-[13px] text-ink-2">
+      <div className="border-t border-line py-6 px-[clamp(24px,5vw,64px)] text-[13px] text-ink-2">
         Results are shown as they&apos;re recorded. No one, including the election&apos;s organizer, can see how any
         individual person voted.
-      </footer>
+      </div>
     </>
   );
 }

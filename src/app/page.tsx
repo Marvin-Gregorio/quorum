@@ -1,23 +1,16 @@
 import Link from 'next/link';
-import { PRIMARY_BTN, SIGNIN_BTN } from '@/lib/ui-classes';
+import { Header } from '@/components/header';
+import { PRIMARY_BTN } from '@/lib/ui-classes';
 import { cn } from '@/lib/cn';
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="flex items-center justify-between p-[clamp(24px,5vw,64px)] py-7 border-b border-line">
-        <div className="font-['Fraunces',serif] italic font-semibold text-[22px]">
-          Quorum
-        </div>
-        <nav className="flex gap-5 items-center text-[15px]">
-          <a href="#how-it-works" className="no-underline">
-            How it works
-          </a>
-          <Link href="/sign-in" className={SIGNIN_BTN}>
-            Sign in
-          </Link>
-        </nav>
-      </header>
+    <>
+      <Header>
+        <a href="#how-it-works" className="no-underline">
+          How it works
+        </a>
+      </Header>
 
       <section className="grow flex flex-wrap-reverse items-center gap-12 py-[clamp(40px,8vw,96px)] px-[clamp(24px,5vw,64px)] max-w-[1280px] mx-auto w-full">
         <div className="flex-[1_1_420px] min-w-[280px]">
@@ -91,10 +84,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      <footer className="border-t border-line py-8 px-[clamp(24px,5vw,64px)] flex justify-between items-center text-sm text-ink-2 flex-wrap gap-2">
-        <div className="font-['Fraunces',serif] italic">Quorum</div>
-        <div>Free for small and mid-sized organizations</div>
-      </footer>
-    </div>
+    </>
   );
 }

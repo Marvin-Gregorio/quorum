@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { getManagedElections } from '@/services/profile';
-import { UserMenu } from '@/components/user-menu';
+import { Header } from '@/components/header';
 import { initialsFor } from '@/lib/avatar';
 import { BREADCRUMB_LIST, BREADCRUMB_LINK, PRIMARY_BTN, STATUS_BADGE_BASE, STATUS_BADGE_VARIANT } from '@/lib/ui-classes';
 import { cn } from '@/lib/cn';
@@ -24,13 +24,8 @@ export default async function ProfilePage() {
   const displayName = profile?.full_name ?? profile?.email ?? '';
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="flex justify-between items-center px-[clamp(24px,5vw,64px)] py-6 border-b border-line">
-        <div className="font-['Fraunces',serif] italic font-semibold text-xl">
-          Quorum
-        </div>
-        <UserMenu name={profile?.full_name ?? null} email={profile?.email ?? userData.user.email ?? null} />
-      </header>
+    <>
+      <Header />
 
       <nav aria-label="Breadcrumb" className="pt-4 px-[clamp(24px,5vw,64px)] pb-0">
         <ol className={BREADCRUMB_LIST}>
@@ -96,6 +91,6 @@ export default async function ProfilePage() {
           )}
         </div>
       </div>
-    </div>
+    </>
   );
 }

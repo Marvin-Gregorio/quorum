@@ -6,7 +6,6 @@ export default function TermsPage() {
   return (
     <>
       <Header />
-
       <div className="grow px-[clamp(24px,5vw,64px)] pb-[clamp(48px,8vw,96px)]">
         <div className="max-w-[640px] mx-auto">
           <h1 className="text-[32px] mb-2">Terms of service</h1>

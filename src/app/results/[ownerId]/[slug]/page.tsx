@@ -3,9 +3,9 @@ import Link from 'next/link';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { checkPageAccess } from '@/lib/access';
 import { getResultsSnapshot } from '@/services/results';
-import { UserMenu } from '@/components/user-menu';
+import { Header } from '@/components/header';
 import { LiveResults } from './live-results';
-import { BREADCRUMB_LIST, BREADCRUMB_LINK, SIGNIN_BTN } from '@/lib/ui-classes';
+import { BREADCRUMB_LIST, BREADCRUMB_LINK } from '@/lib/ui-classes';
 
 export default async function ResultsPage({ params }: { params: Promise<{ ownerId: string; slug: string }> }) {
   const { ownerId, slug } = await params;
@@ -41,24 +41,9 @@ export default async function ResultsPage({ params }: { params: Promise<{ ownerI
 
   const isOwner = userData.user?.id === page.owner_id;
 
-  const profile = userData.user
-    ? (await supabase.from('profiles').select('*').eq('id', userData.user.id).single()).data
-    : null;
-
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="flex justify-between items-center px-[clamp(24px,5vw,64px)] py-6 border-b border-line">
-        <div className="font-['Fraunces',serif] italic font-semibold text-xl">
-          Quorum
-        </div>
-        {userData.user ? (
-          <UserMenu name={profile?.full_name ?? null} email={profile?.email ?? userData.user.email ?? null} />
-        ) : (
-          <Link href="/sign-in" className={SIGNIN_BTN}>
-            Sign in
-          </Link>
-        )}
-      </header>
+    <>
+      <Header />
 
       <nav aria-label="Breadcrumb" className="max-w-[820px] w-full mx-auto pt-4 px-6 pb-0">
         <ol className={BREADCRUMB_LIST}>
@@ -73,6 +58,6 @@ export default async function ResultsPage({ params }: { params: Promise<{ ownerI
       </nav>
 
       <LiveResults ownerId={ownerId} slug={slug} initialSnapshot={snapshot} isOwner={isOwner} />
-    </div>
+    </>
   );
 }
