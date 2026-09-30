@@ -16,10 +16,16 @@ export interface Ballot {
 
 export async function getBallot(
   supabase: SupabaseClient<Database>,
+  ownerId: string,
   slug: string,
   voterId: string
 ): Promise<Ballot | null> {
-  const { data: page } = await supabase.from('pages').select('*').eq('slug', slug).maybeSingle();
+  const { data: page } = await supabase
+    .from('pages')
+    .select('*')
+    .eq('owner_id', ownerId)
+    .eq('slug', slug)
+    .maybeSingle();
   if (!page) return null;
 
   const { data: positionRows } = await supabase

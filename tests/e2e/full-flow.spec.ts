@@ -67,7 +67,7 @@ test('create an election and land on its Manager Console with the submitted data
   // Real Server Action -> real Postgres insert -> real router.push redirect.
   await expect(page).toHaveURL(/\/manage\//, { timeout: 10_000 });
 
-  // Manager Console (src/app/manage/[slug]/page.tsx) renders
+  // Manager Console (src/app/manage/[ownerId]/[slug]/page.tsx) renders
   // `<h1>{election.title}</h1>` and `<p>{election.organizationName}</p>`,
   // loaded fresh from the database via getManagedElection — this confirms
   // the full round trip actually persisted and reloaded the right data.

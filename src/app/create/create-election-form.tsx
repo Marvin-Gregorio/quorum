@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { createElectionAction } from './actions';
 import { createBrowserSupabaseClient } from '@/lib/supabase/client';
 import { compressCandidatePhoto } from '@/lib/image-compression';
-import { updateCandidatePhotoAction } from '@/app/manage/[slug]/actions';
+import { updateCandidatePhotoAction } from '@/app/manage/[ownerId]/[slug]/actions';
 import { initialsFor, colorForIndex } from '@/lib/avatar';
 
 type Candidate = { id: string; name: string; bio: string; photoFile: File | null; previewUrl: string | null };
@@ -175,7 +175,7 @@ export function CreateElectionForm() {
         }
       }
 
-      router.push(`/manage/${result.slug}`);
+      router.push(`/manage/${result.ownerId}/${result.slug}`);
     } finally {
       setSubmitting(false);
     }

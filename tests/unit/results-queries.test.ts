@@ -9,9 +9,11 @@ describe('getResultsSnapshot', () => {
           return {
             select: () => ({
               eq: () => ({
-                maybeSingle: async () => ({
-                  data: { id: 'page-1', title: '2026 Board Election', organization_name: 'Riverside Tenants Cooperative' },
-                  error: null,
+                eq: () => ({
+                  maybeSingle: async () => ({
+                    data: { id: 'page-1', title: '2026 Board Election', organization_name: 'Riverside Tenants Cooperative' },
+                    error: null,
+                  }),
                 }),
               }),
             }),
@@ -36,7 +38,7 @@ describe('getResultsSnapshot', () => {
       },
     } as any;
 
-    const result = await getResultsSnapshot(supabase, 'test-election');
+    const result = await getResultsSnapshot(supabase, 'owner-1', 'test-election');
     expect(result?.positions[0].candidates[0].voteCount).toBe(61);
   });
 });

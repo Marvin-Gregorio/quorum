@@ -9,14 +9,16 @@ describe('getBallot', () => {
           return {
             select: () => ({
               eq: () => ({
-                maybeSingle: async () => ({
-                  data: {
-                    id: 'page-1',
-                    title: '2026 Board Election',
-                    organization_name: 'Riverside Tenants Cooperative',
-                    voting_ends_at: '2026-03-14T17:00:00.000Z',
-                  },
-                  error: null,
+                eq: () => ({
+                  maybeSingle: async () => ({
+                    data: {
+                      id: 'page-1',
+                      title: '2026 Board Election',
+                      organization_name: 'Riverside Tenants Cooperative',
+                      voting_ends_at: '2026-03-14T17:00:00.000Z',
+                    },
+                    error: null,
+                  }),
                 }),
               }),
             }),
@@ -56,7 +58,7 @@ describe('getBallot', () => {
       },
     } as any;
 
-    const result = await getBallot(supabase, 'test-election', 'voter-1');
+    const result = await getBallot(supabase, 'owner-1', 'test-election', 'voter-1');
     expect(result?.positions[0].selectedCandidateId).toBe('cand-2');
   });
 });

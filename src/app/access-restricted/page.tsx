@@ -5,15 +5,15 @@ import { UserMenu } from '@/components/user-menu';
 export default async function AccessRestrictedPage({
   searchParams,
 }: {
-  searchParams: Promise<{ slug?: string }>;
+  searchParams: Promise<{ pageId?: string }>;
 }) {
-  const { slug } = await searchParams;
+  const { pageId } = await searchParams;
   const supabase = await createServerSupabaseClient();
   const { data: userData } = await supabase.auth.getUser();
 
   let heading = 'You do not have access to this election.';
-  if (slug) {
-    const { data: page } = await supabase.from('pages').select('id, is_private').eq('slug', slug).maybeSingle();
+  if (pageId) {
+    const { data: page } = await supabase.from('pages').select('id, is_private').eq('id', pageId).maybeSingle();
     if (page?.is_private) {
       const { data: domainRows } = await supabase.from('allowed_domains').select('domain').eq('page_id', page.id);
       const domainList = (domainRows ?? []).map((d) => d.domain);

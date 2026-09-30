@@ -29,7 +29,7 @@ vi.mock('@/lib/supabase/server', () => ({
   createServerSupabaseClient: vi.fn(async () => ({
     auth: { getUser: async () => ({ data: { user: { id: 'owner-1' } } }) },
     from: (table: string) => ({
-      select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null, error: null }) }) }),
+      select: () => ({ eq: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null, error: null }) }) }) }),
       insert: (row: any) => makeInsertResult(table, row),
     }),
   })),

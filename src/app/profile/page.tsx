@@ -109,7 +109,7 @@ export default async function ProfilePage() {
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <span className={`status-badge status-${election.status}`}>{STATUS_LABEL[election.status]}</span>
-                  <Link href={`/manage/${election.slug}`} className="manage-link">
+                  <Link href={`/manage/${userData.user.id}/${election.slug}`} className="manage-link">
                     Manage
                   </Link>
                 </div>

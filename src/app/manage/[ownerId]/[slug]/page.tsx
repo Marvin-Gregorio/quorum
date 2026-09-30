@@ -6,8 +6,8 @@ import { getManagedElection } from '@/lib/queries/manage';
 import { UserMenu } from '@/components/user-menu';
 import { ManageConsole, type Tally, type Turnout } from './manage-console';
 
-export default async function ManagePage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
+export default async function ManagePage({ params }: { params: Promise<{ ownerId: string; slug: string }> }) {
+  const { ownerId, slug } = await params;
   const supabase = await createServerSupabaseClient();
   const { data: userData } = await supabase.auth.getUser();
 
@@ -18,10 +18,10 @@ export default async function ManagePage({ params }: { params: Promise<{ slug: s
   // visitor to '/' instead of prompting them to sign in. Check sign-in
   // status first so that case is distinguishable.
   if (!userData.user) {
-    redirect(`/sign-in?next=${encodeURIComponent(`/manage/${slug}`)}`);
+    redirect(`/sign-in?next=${encodeURIComponent(`/manage/${ownerId}/${slug}`)}`);
   }
 
-  const election = await getManagedElection(supabase, slug);
+  const election = await getManagedElection(supabase, ownerId, slug);
   if (!election) redirect('/');
 
   const access = await checkPageAccess(
@@ -30,8 +30,8 @@ export default async function ManagePage({ params }: { params: Promise<{ slug: s
     userData.user.id,
     userData.user.email ?? null
   );
-  if (access === 'sign-in') redirect(`/sign-in?next=${encodeURIComponent(`/manage/${slug}`)}`);
-  if (access === 'restricted' || userData.user.id !== election.ownerId) redirect(`/access-restricted?slug=${slug}`);
+  if (access === 'sign-in') redirect(`/sign-in?next=${encodeURIComponent(`/manage/${ownerId}/${slug}`)}`);
+  if (access === 'restricted' || userData.user.id !== election.ownerId) redirect(`/access-restricted?pageId=${election.id}`);
 
   const { data: profile } = await supabase.from('profiles').select('*').eq('id', userData.user.id).single();
 
@@ -95,6 +95,7 @@ export default async function ManagePage({ params }: { params: Promise<{ slug: s
 
       <ManageConsole
         pageId={election.id}
+        ownerId={election.ownerId}
         slug={election.slug}
         organizationName={election.organizationName}
         title={election.title}

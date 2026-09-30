@@ -20,9 +20,15 @@ export interface ManagedElection {
 
 export async function getManagedElection(
   supabase: SupabaseClient<Database>,
+  ownerId: string,
   slug: string
 ): Promise<ManagedElection | null> {
-  const { data: page } = await supabase.from('pages').select('*').eq('slug', slug).maybeSingle();
+  const { data: page } = await supabase
+    .from('pages')
+    .select('*')
+    .eq('owner_id', ownerId)
+    .eq('slug', slug)
+    .maybeSingle();
   if (!page) return null;
 
   const { data: domainRows } = await supabase.from('allowed_domains').select('domain').eq('page_id', page.id);

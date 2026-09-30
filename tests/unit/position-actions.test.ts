@@ -33,7 +33,7 @@ vi.mock('@/lib/supabase/server', () => ({
   })),
 }));
 
-import { createPositionAction, deletePositionAction } from '@/app/manage/[slug]/actions';
+import { createPositionAction, deletePositionAction } from '@/app/manage/[ownerId]/[slug]/actions';
 
 describe('position actions', () => {
   it('creates a position under a page', async () => {

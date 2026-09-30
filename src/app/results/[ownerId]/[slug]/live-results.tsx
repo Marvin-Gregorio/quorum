@@ -4,25 +4,69 @@ import { useEffect, useState } from 'react';
 import type { ResultsSnapshot } from '@/lib/queries/results';
 import { initialsFor, colorForIndex } from '@/lib/avatar';
 import { toRoman } from '@/lib/roman';
+import { useLiveVoteTallies } from '@/lib/hooks/use-live-vote-tallies';
 
-export function LiveResults({ slug, initialSnapshot }: { slug: string; initialSnapshot: ResultsSnapshot }) {
-  const [snapshot, setSnapshot] = useState(initialSnapshot);
+export function LiveResults({
+  ownerId,
+  slug,
+  initialSnapshot,
+  isOwner,
+}: {
+  ownerId: string;
+  slug: string;
+  initialSnapshot: ResultsSnapshot;
+  isOwner: boolean;
+}) {
+  // Owners get Realtime (same vote_tallies subscription the Manager Console
+  // uses); everyone else polls, to keep the free-tier Realtime connection
+  // budget spent only on the people actively managing an election.
+  const [polledSnapshot, setPolledSnapshot] = useState(initialSnapshot);
+
+  const positionIds = initialSnapshot.positions.map((p) => p.id);
+  const initialTallies = initialSnapshot.positions.flatMap((p) =>
+    p.candidates.map((c) => ({ positionId: p.id, candidateId: c.id, voteCount: c.voteCount }))
+  );
+  const liveTallies = useLiveVoteTallies({
+    pageId: initialSnapshot.pageId,
+    positionIds,
+    initialTallies,
+    enabled: isOwner,
+  });
 
   useEffect(() => {
+    if (isOwner) return;
     const interval = setInterval(async () => {
       // Skip polling while the tab isn't visible, so results don't keep
       // fetching forever in a backgrounded tab.
       if (document.hidden) return;
       try {
-        const response = await fetch(`/api/results/${slug}`);
-        if (response.ok) setSnapshot(await response.json());
+        const response = await fetch(`/api/results/${ownerId}/${slug}`);
+        if (response.ok) setPolledSnapshot(await response.json());
       } catch {
         // A transient network failure shouldn't crash the poll loop or
         // produce an unhandled rejection; just try again next tick.
       }
     }, 6000);
     return () => clearInterval(interval);
-  }, [slug]);
+  }, [isOwner, ownerId, slug]);
+
+  // The structure (titles, candidate names) never changes here — only vote
+  // counts do — so the owner's live view overlays fresh tallies onto the
+  // original snapshot shape, while everyone else gets the fully-replaced
+  // snapshot straight from the last poll.
+  const snapshot: ResultsSnapshot = isOwner
+    ? {
+        ...initialSnapshot,
+        positions: initialSnapshot.positions.map((p) => ({
+          ...p,
+          candidates: p.candidates.map((c) => ({
+            ...c,
+            voteCount:
+              liveTallies.find((t) => t.positionId === p.id && t.candidateId === c.id)?.voteCount ?? c.voteCount,
+          })),
+        })),
+      }
+    : polledSnapshot;
 
   return (
     <>

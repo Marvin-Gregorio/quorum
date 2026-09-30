@@ -12,7 +12,8 @@ export function slugify(title: string): string {
 
 export async function generateUniqueSlug(
   supabase: SupabaseClient<Database>,
-  title: string
+  title: string,
+  ownerId: string
 ): Promise<string> {
   // A title with no ASCII alphanumeric characters (e.g. all emoji, all
   // punctuation) slugifies to an empty string, which would otherwise create
@@ -22,13 +23,19 @@ export async function generateUniqueSlug(
   let candidate = base;
   let suffix = 2;
 
-  // This pre-check only sees rows visible to the caller under RLS, so it
-  // can't detect a collision with another user's private page — the actual
-  // insert is the source of truth and the caller should retry on a real
-  // unique-constraint violation (Postgres error code 23505) rather than
-  // trusting this check alone.
+  // Slugs are unique per (owner_id, slug), not globally, so the pre-check is
+  // scoped to this owner. It only sees rows visible to the caller under RLS
+  // anyway, so it can't detect a collision with another user's private page
+  // — the actual insert is the source of truth and the caller should retry
+  // on a real unique-constraint violation (Postgres error code 23505) rather
+  // than trusting this check alone.
   while (true) {
-    const { data } = await supabase.from('pages').select('id').eq('slug', candidate).maybeSingle();
+    const { data } = await supabase
+      .from('pages')
+      .select('id')
+      .eq('owner_id', ownerId)
+      .eq('slug', candidate)
+      .maybeSingle();
     if (!data) return candidate;
     candidate = `${base}-${suffix}`;
     suffix += 1;

@@ -6,13 +6,14 @@ import { getResultsSnapshot } from '@/lib/queries/results';
 import { UserMenu } from '@/components/user-menu';
 import { LiveResults } from './live-results';
 
-export default async function ResultsPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
+export default async function ResultsPage({ params }: { params: Promise<{ ownerId: string; slug: string }> }) {
+  const { ownerId, slug } = await params;
   const supabase = await createServerSupabaseClient();
 
   const { data: page } = await supabase
     .from('pages')
     .select('id, is_private, owner_id')
+    .eq('owner_id', ownerId)
     .eq('slug', slug)
     .maybeSingle();
   if (!page) redirect('/');
@@ -21,12 +22,14 @@ export default async function ResultsPage({ params }: { params: Promise<{ slug: 
 
   if (page.is_private) {
     const access = await checkPageAccess(supabase, page, userData.user?.id ?? null, userData.user?.email ?? null);
-    if (access === 'sign-in') redirect(`/sign-in?next=${encodeURIComponent(`/results/${slug}`)}`);
-    if (access === 'restricted') redirect(`/access-restricted?slug=${slug}`);
+    if (access === 'sign-in') redirect(`/sign-in?next=${encodeURIComponent(`/results/${ownerId}/${slug}`)}`);
+    if (access === 'restricted') redirect(`/access-restricted?pageId=${page.id}`);
   }
 
-  const snapshot = await getResultsSnapshot(supabase, slug);
+  const snapshot = await getResultsSnapshot(supabase, ownerId, slug);
   if (!snapshot) redirect('/');
+
+  const isOwner = userData.user?.id === page.owner_id;
 
   const profile = userData.user
     ? (await supabase.from('profiles').select('*').eq('id', userData.user.id).single()).data
@@ -67,7 +70,7 @@ export default async function ResultsPage({ params }: { params: Promise<{ slug: 
         </ol>
       </nav>
 
-      <LiveResults slug={slug} initialSnapshot={snapshot} />
+      <LiveResults ownerId={ownerId} slug={slug} initialSnapshot={snapshot} isOwner={isOwner} />
     </div>
   );
 }

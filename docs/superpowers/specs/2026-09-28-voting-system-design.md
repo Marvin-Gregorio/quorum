@@ -86,8 +86,8 @@ Storage, Realtime), designed to run entirely within Supabase's free tier.
   what makes one-vote-per-person-per-position enforceable. "Public" means
   any email domain is accepted; "private" means the voter's email domain
   must appear in that page's `allowed_domains`.
-- The private/public flag gates both the voting link (`/vote/[slug]`) and
-  the results dashboard (`/results/[slug]`) identically — a private page's
+- The private/public flag gates both the voting link (`/vote/[ownerId]/[slug]`) and
+  the results dashboard (`/results/[ownerId]/[slug]`) identically — a private page's
   results are exactly as restricted as its ballot.
 - Domain gating is enforced twice: a fast check in Next.js
   middleware/Server Components for UX (immediate redirect with a clear
@@ -198,19 +198,20 @@ connection budget, simultaneously.
 - `voter_turnout` SELECT policy is owner-only — lets a manager see who has
   or hasn't voted per position, with no way to infer their choice, since the
   choice was never written to this table.
-- **Realtime is only used by the manager console**: one Supabase Realtime
-  channel per manager session, subscribed to `postgres_changes` on
-  `vote_tallies` and `voter_turnout` filtered to that page's rows. This is a
-  small, bounded number of concurrent connections (one per active manager),
-  never scaling with public viewership.
-- **The public results page polls instead of subscribing**: a Next.js Route
-  Handler (`/api/results/[slug]`) queries `vote_tallies` (RLS-enforced) and
-  the client re-fetches every ~5–8 seconds. However many people load the
-  results page, this is ordinary HTTP request volume, not held-open
-  sockets — which is the resource that actually has a hard free-tier
-  ceiling (~200 concurrent connections). Both surfaces read the same
-  rollup tables, so there is no drift between what the manager sees live
-  and what the public sees moments later.
+- **Realtime is used by the manager console, and by the results page when
+  its viewer is that election's owner**: one Supabase Realtime channel per
+  such session, subscribed to `postgres_changes` on `vote_tallies` (and,
+  for the manager console only, `voter_turnout`) filtered to that page's
+  rows. This is a small, bounded number of concurrent connections (one per
+  active manager), never scaling with public viewership.
+- **Everyone else on the results page polls instead of subscribing**: a
+  Next.js Route Handler (`/api/results/[ownerId]/[slug]`) queries
+  `vote_tallies` (RLS-enforced) and the client re-fetches every ~5–8
+  seconds. However many people load the results page, this is ordinary
+  HTTP request volume, not held-open sockets — which is the resource that
+  actually has a hard free-tier ceiling (~200 concurrent connections). Both
+  surfaces read the same rollup tables, so there is no drift between what
+  the manager sees live and what the public sees moments later.
 
 ### Alternatives considered
 
@@ -254,7 +255,7 @@ connection budget, simultaneously.
 
 ## 10. Voting flow
 
-1. Voter signs in (Google/Microsoft) and lands on `/vote/[slug]`, passing
+1. Voter signs in (Google/Microsoft) and lands on `/vote/[ownerId]/[slug]`, passing
    the public/domain gate described in §5.
 2. For each position, the voter selects one candidate and submits via a
    Server Action that upserts `votes` on `(voter_id, position_id)` —
@@ -273,14 +274,18 @@ connection budget, simultaneously.
 ## 11. Routes (Next.js App Router)
 
 ```
-/                            landing/marketing + "sign in to create an election"
-/create                      (auth required) new page wizard
-/manage/[slug]                manager console: positions, candidates, domains,
-                              turnout, live tallies
-/manage/[slug]/candidates     add/edit candidates (image upload)
-/vote/[slug]                  public candidate list + ballot (auth + domain gate)
-/results/[slug]                public live results (domain gate only if private)
+/                                   landing/marketing + "sign in to create an election"
+/create                            (auth required) new page wizard
+/manage/[ownerId]/[slug]           manager console: positions, candidates, domains,
+                                    turnout, live tallies
+/vote/[ownerId]/[slug]             public candidate list + ballot (auth + domain gate)
+/results/[ownerId]/[slug]          public live results (domain gate only if private);
+                                    realtime for the owner, polling for everyone else
 ```
+
+Pages are identified by `(owner_id, slug)`, not `slug` alone — `pages.slug`
+is unique per owner, not globally, so two different managers can each have
+their own election at the same slug.
 
 ## 12. Testing strategy
 

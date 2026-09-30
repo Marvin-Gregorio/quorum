@@ -39,7 +39,7 @@ vi.mock('@/lib/supabase/server', () => ({
   })),
 }));
 
-import { createCandidateAction, updateCandidateAction, deleteCandidateAction } from '@/app/manage/[slug]/actions';
+import { createCandidateAction, updateCandidateAction, deleteCandidateAction } from '@/app/manage/[ownerId]/[slug]/actions';
 
 describe('candidate actions', () => {
   it('creates a candidate under a position', async () => {

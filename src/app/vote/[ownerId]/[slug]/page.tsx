@@ -6,23 +6,24 @@ import { getBallot } from '@/lib/queries/ballot';
 import { UserMenu } from '@/components/user-menu';
 import { BallotForm } from './ballot-form';
 
-export default async function BallotPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
+export default async function BallotPage({ params }: { params: Promise<{ ownerId: string; slug: string }> }) {
+  const { ownerId, slug } = await params;
   const supabase = await createServerSupabaseClient();
   const { data: userData } = await supabase.auth.getUser();
 
   const { data: page } = await supabase
     .from('pages')
     .select('id, is_private, owner_id')
+    .eq('owner_id', ownerId)
     .eq('slug', slug)
     .maybeSingle();
   if (!page) redirect('/');
 
   const access = await checkPageAccess(supabase, page, userData.user?.id ?? null, userData.user?.email ?? null);
-  if (access === 'sign-in') redirect(`/sign-in?next=${encodeURIComponent(`/vote/${slug}`)}`);
-  if (access === 'restricted') redirect(`/access-restricted?slug=${slug}`);
+  if (access === 'sign-in') redirect(`/sign-in?next=${encodeURIComponent(`/vote/${ownerId}/${slug}`)}`);
+  if (access === 'restricted') redirect(`/access-restricted?pageId=${page.id}`);
 
-  const ballot = await getBallot(supabase, slug, userData.user!.id);
+  const ballot = await getBallot(supabase, ownerId, slug, userData.user!.id);
   if (!ballot) redirect('/');
 
   const { data: profile } = await supabase.from('profiles').select('*').eq('id', userData.user!.id).single();

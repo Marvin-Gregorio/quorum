@@ -21,6 +21,7 @@ export interface CreateElectionInput {
 export interface CreatedElection {
   slug: string;
   pageId: string;
+  ownerId: string;
   positions: { title: string; id: string; candidates: { name: string; id: string }[] }[];
 }
 
@@ -56,7 +57,7 @@ export async function createElectionAction(
   }
 
   const baseSlug = slugify(input.title) || undefined;
-  let slug = await generateUniqueSlug(supabase, input.title);
+  let slug = await generateUniqueSlug(supabase, input.title, userData.user.id);
   let page: { id: string; slug: string } | null = null;
 
   // The pre-check inside generateUniqueSlug only sees pages visible to this
@@ -141,5 +142,5 @@ export async function createElectionAction(
     createdPositions.push({ title: position.title, id: createdPosition.id, candidates: createdCandidates });
   }
 
-  return { slug: page.slug, pageId: page.id, positions: createdPositions };
+  return { slug: page.slug, pageId: page.id, ownerId: userData.user.id, positions: createdPositions };
 }

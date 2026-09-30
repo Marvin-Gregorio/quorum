@@ -17,12 +17,14 @@ describe('generateUniqueSlug', () => {
       from: () => ({
         select: () => ({
           eq: () => ({
-            maybeSingle: () => Promise.resolve({ data: null, error: null }),
+            eq: () => ({
+              maybeSingle: () => Promise.resolve({ data: null, error: null }),
+            }),
           }),
         }),
       }),
     } as any;
-    const slug = await generateUniqueSlug(supabase, '2026 Board Election');
+    const slug = await generateUniqueSlug(supabase, '2026 Board Election', 'owner-1');
     expect(slug).toBe('2026-board-election');
   });
 
@@ -32,15 +34,17 @@ describe('generateUniqueSlug', () => {
       from: () => ({
         select: () => ({
           eq: () => ({
-            maybeSingle: () => {
-              call += 1;
-              return Promise.resolve(call === 1 ? { data: { id: 'existing' }, error: null } : { data: null, error: null });
-            },
+            eq: () => ({
+              maybeSingle: () => {
+                call += 1;
+                return Promise.resolve(call === 1 ? { data: { id: 'existing' }, error: null } : { data: null, error: null });
+              },
+            }),
           }),
         }),
       }),
     } as any;
-    const slug = await generateUniqueSlug(supabase, '2026 Board Election');
+    const slug = await generateUniqueSlug(supabase, '2026 Board Election', 'owner-1');
     expect(slug).toBe('2026-board-election-2');
   });
 });

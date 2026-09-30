@@ -33,7 +33,7 @@ vi.mock('@/lib/supabase/server', () => ({
   })),
 }));
 
-import { updateElectionSettingsAction } from '@/app/manage/[slug]/actions';
+import { updateElectionSettingsAction } from '@/app/manage/[ownerId]/[slug]/actions';
 
 describe('updateElectionSettingsAction', () => {
   it('updates the page and replaces its allowed domains', async () => {

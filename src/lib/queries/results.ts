@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/lib/supabase/types';
 
 export interface ResultsSnapshot {
+  pageId: string;
   title: string;
   organizationName: string;
   positions: { id: string; title: string; candidates: { id: string; name: string; voteCount: number }[] }[];
@@ -9,9 +10,15 @@ export interface ResultsSnapshot {
 
 export async function getResultsSnapshot(
   supabase: SupabaseClient<Database>,
+  ownerId: string,
   slug: string
 ): Promise<ResultsSnapshot | null> {
-  const { data: page } = await supabase.from('pages').select('id, title, organization_name').eq('slug', slug).maybeSingle();
+  const { data: page } = await supabase
+    .from('pages')
+    .select('id, title, organization_name')
+    .eq('owner_id', ownerId)
+    .eq('slug', slug)
+    .maybeSingle();
   if (!page) return null;
 
   const { data: positionRows } = await supabase
@@ -31,6 +38,7 @@ export async function getResultsSnapshot(
     (tallyRows ?? []).find((t: any) => t.position_id === positionId && t.candidate_id === candidateId)?.vote_count ?? 0;
 
   return {
+    pageId: page.id,
     title: page.title,
     organizationName: page.organization_name,
     positions: (positionRows ?? []).map((p: any) => ({

@@ -6,12 +6,9 @@ import { updateElectionSettingsAction, updateCandidateAction } from './actions';
 import { CandidatePhotoUpload } from './candidate-photo-upload';
 import { initialsFor, colorForIndex } from '@/lib/avatar';
 import { toRoman } from '@/lib/roman';
+import { useLiveVoteTallies, type Tally } from '@/lib/hooks/use-live-vote-tallies';
 
-export interface Tally {
-  positionId: string;
-  candidateId: string;
-  voteCount: number;
-}
+export type { Tally };
 
 export interface Turnout {
   positionId: string;
@@ -46,6 +43,7 @@ function toDatetimeLocal(iso: string): string {
 
 export function ManageConsole({
   pageId,
+  ownerId,
   slug,
   organizationName: initialOrgName,
   title: initialTitle,
@@ -59,6 +57,7 @@ export function ManageConsole({
   initialTurnout,
 }: {
   pageId: string;
+  ownerId: string;
   slug: string;
   organizationName: string;
   title: string;
@@ -79,7 +78,7 @@ export function ManageConsole({
   const [domains, setDomains] = useState(initialDomains);
   const [positions, setPositions] = useState(initialPositions);
 
-  const [tallies, setTallies] = useState(initialTallies);
+  const tallies = useLiveVoteTallies({ pageId, positionIds, initialTallies, enabled: true });
   const [turnout, setTurnout] = useState(initialTurnout);
 
   const [candidateModal, setCandidateModal] = useState<{ positionId: string; candidateId: string; name: string; bio: string; photoUrl: string | null } | null>(null);
@@ -100,38 +99,22 @@ export function ManageConsole({
 
   const [copiedLink, setCopiedLink] = useState<'ballot' | 'results' | null>(null);
 
-  // vote_tallies rows don't carry page_id directly (only position_id), so
-  // the Realtime subscription is filtered server-side with an `in.(...)`
-  // filter over this page's own position ids. voter_turnout does carry
-  // page_id directly, so it's filtered server-side on that column instead.
-  // Both are still re-checked client-side against this same position id set
-  // as a defence-in-depth belt-and-braces check (and to guard against a
+  // voter_turnout carries page_id directly, so it's filtered server-side on
+  // that column. Re-checked client-side against this same position id set as
+  // a defence-in-depth belt-and-braces check (and to guard against a
   // stale/empty positionIds prop on first render). This set comes from the
   // page's full, server-fetched position list (not derived from
-  // initialTallies/initialTurnout), so a position with zero votes/turnout so
-  // far — newly added, or just hasn't received its first vote yet — is
-  // still included and its first live vote isn't silently dropped.
+  // initialTurnout), so a position with zero turnout so far — newly added,
+  // or just hasn't received its first vote yet — is still included and its
+  // first live vote isn't silently dropped. (vote_tallies has the same
+  // shape of guard, inside useLiveVoteTallies.)
   const positionIdSet = useMemo(() => new Set(positionIds), [positionIds]);
 
   useEffect(() => {
     if (positionIds.length === 0) return;
     const supabase = createBrowserSupabaseClient();
-    const positionIdFilter = `position_id=in.(${positionIds.join(',')})`;
     const channel = supabase
-      .channel(`manage-${pageId}`)
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'vote_tallies', filter: positionIdFilter },
-        (payload) => {
-          const row = payload.new as { position_id: string; candidate_id: string; vote_count: number };
-          if (!positionIdSet.has(row.position_id)) return;
-          setTallies((prev) => {
-            const next = prev.filter((t) => !(t.positionId === row.position_id && t.candidateId === row.candidate_id));
-            next.push({ positionId: row.position_id, candidateId: row.candidate_id, voteCount: row.vote_count });
-            return next;
-          });
-        }
-      )
+      .channel(`turnout-${pageId}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'voter_turnout', filter: `page_id=eq.${pageId}` },
@@ -252,8 +235,8 @@ export function ManageConsole({
   }
 
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
-  const ballotUrl = `${origin}/vote/${slug}`;
-  const resultsUrl = `${origin}/results/${slug}`;
+  const ballotUrl = `${origin}/vote/${ownerId}/${slug}`;
+  const resultsUrl = `${origin}/results/${ownerId}/${slug}`;
 
   async function copyLink(kind: 'ballot' | 'results', value: string) {
     try {
