@@ -5,6 +5,7 @@ import { checkPageAccess } from '@/lib/access';
 import { getManagedElection } from '@/lib/queries/manage';
 import { UserMenu } from '@/components/user-menu';
 import { ManageConsole, type Tally, type Turnout } from './manage-console';
+import { BREADCRUMB_LIST, BREADCRUMB_LINK } from '@/lib/ui-classes';
 
 export default async function ManagePage({ params }: { params: Promise<{ ownerId: string; slug: string }> }) {
   const { ownerId, slug } = await params;
@@ -68,13 +69,13 @@ export default async function ManagePage({ params }: { params: Promise<{ ownerId
       </header>
 
       <nav aria-label="Breadcrumb" className="max-w-[900px] w-full mx-auto pt-4 px-6 pb-0">
-        <ol className="breadcrumb-list">
+        <ol className={BREADCRUMB_LIST}>
           <li>
-            <Link href="/">Home</Link>
+            <Link href="/" className={BREADCRUMB_LINK}>Home</Link>
           </li>
           <li aria-hidden="true">/</li>
           <li>
-            <Link href="/profile">Profile</Link>
+            <Link href="/profile" className={BREADCRUMB_LINK}>Profile</Link>
           </li>
           <li aria-hidden="true">/</li>
           <li aria-current="page" className="text-ink">

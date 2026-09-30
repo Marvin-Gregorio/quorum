@@ -4,6 +4,8 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { getManagedElections } from '@/lib/queries/profile';
 import { UserMenu } from '@/components/user-menu';
 import { initialsFor } from '@/lib/avatar';
+import { BREADCRUMB_LIST, BREADCRUMB_LINK, PRIMARY_BTN, STATUS_BADGE_BASE, STATUS_BADGE_VARIANT } from '@/lib/ui-classes';
+import { cn } from '@/lib/cn';
 
 const STATUS_LABEL: Record<string, string> = {
   open: 'Open',
@@ -31,9 +33,9 @@ export default async function ProfilePage() {
       </header>
 
       <nav aria-label="Breadcrumb" className="pt-4 px-[clamp(24px,5vw,64px)] pb-0">
-        <ol className="breadcrumb-list">
+        <ol className={BREADCRUMB_LIST}>
           <li>
-            <Link href="/">Home</Link>
+            <Link href="/" className={BREADCRUMB_LINK}>Home</Link>
           </li>
           <li aria-hidden="true">/</li>
           <li aria-current="page" className="text-ink">
@@ -56,7 +58,7 @@ export default async function ProfilePage() {
         <div className="border-t border-line pt-7">
           <div className="flex justify-between items-start gap-4 flex-wrap mb-1">
             <h2 className="text-[19px]">Elections you manage</h2>
-            <Link href="/create" className="primary-btn">
+            <Link href="/create" className={PRIMARY_BTN}>
               Create an election
             </Link>
           </div>
@@ -70,14 +72,22 @@ export default async function ProfilePage() {
             </p>
           ) : (
             elections.map((election) => (
-              <div className="election-row" key={election.id}>
+              <div
+                className="flex justify-between items-center py-[18px] border-b border-line gap-4 flex-wrap first:border-t"
+                key={election.id}
+              >
                 <div>
                   <div className="font-medium">{election.title}</div>
                   <div className="text-[13px] text-ink-2 mt-0.5">{election.organizationName}</div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className={`status-badge status-${election.status}`}>{STATUS_LABEL[election.status]}</span>
-                  <Link href={`/manage/${userData.user.id}/${election.slug}`} className="manage-link">
+                  <span className={cn(STATUS_BADGE_BASE, STATUS_BADGE_VARIANT[election.status])}>
+                    {STATUS_LABEL[election.status]}
+                  </span>
+                  <Link
+                    href={`/manage/${userData.user.id}/${election.slug}`}
+                    className="border border-ink bg-transparent rounded-[3px] px-4 py-2 text-sm cursor-pointer text-ink no-underline whitespace-nowrap"
+                  >
                     Manage
                   </Link>
                 </div>

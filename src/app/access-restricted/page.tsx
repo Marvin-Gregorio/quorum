@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { UserMenu } from '@/components/user-menu';
+import { PRIMARY_BTN } from '@/lib/ui-classes';
+import { cn } from '@/lib/cn';
 
 // Only a same-origin relative path is a safe redirect target — see
 // auth/callback/route.ts's isSafeNextPath for the same rule and rationale.
@@ -92,7 +94,7 @@ export default async function AccessRestrictedPage({
           <div className="flex flex-col gap-3 items-center">
             <Link
               href={isSafeNextPath(next) ? `/sign-in?next=${encodeURIComponent(next)}` : '/sign-in'}
-              className="primary-btn px-7 py-[14px] text-[15px]"
+              className={cn(PRIMARY_BTN, 'px-7 py-[14px] text-[15px]')}
             >
               Sign in with a different account
             </Link>

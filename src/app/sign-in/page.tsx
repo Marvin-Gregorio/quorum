@@ -48,12 +48,22 @@ export default function SignInPage() {
           </p>
 
           <div className="flex flex-col gap-3">
-            <button type="button" className="oauth-btn" onClick={() => signInWith('google')}>
-              <span className="g-mark">G</span>
+            <button
+              type="button"
+              className="flex items-center gap-[14px] w-full px-5 py-[14px] border border-ink rounded-[3px] bg-paper text-[15px] font-medium text-ink cursor-pointer no-underline box-border transition-colors duration-150 ease-in-out hover:bg-paper-2"
+              onClick={() => signInWith('google')}
+            >
+              <span className="w-5 h-5 rounded-full border-[1.5px] border-ink-2 flex items-center justify-center font-['Fraunces',serif] text-xs font-bold text-ink-2 shrink-0">
+                G
+              </span>
               Continue with Google
             </button>
-            <button type="button" className="oauth-btn" onClick={() => signInWith('azure')}>
-              <span className="ms-mark">
+            <button
+              type="button"
+              className="flex items-center gap-[14px] w-full px-5 py-[14px] border border-ink rounded-[3px] bg-paper text-[15px] font-medium text-ink cursor-pointer no-underline box-border transition-colors duration-150 ease-in-out hover:bg-paper-2"
+              onClick={() => signInWith('azure')}
+            >
+              <span className="inline-grid grid-cols-[8px_8px] grid-rows-[8px_8px] gap-0.5 w-[18px] h-[18px] shrink-0">
                 <span className="bg-ink-2" />
                 <span className="bg-seal" />
                 <span className="bg-ledger" />

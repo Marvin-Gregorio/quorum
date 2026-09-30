@@ -5,6 +5,7 @@ import { checkPageAccess } from '@/lib/access';
 import { getBallot } from '@/lib/queries/ballot';
 import { UserMenu } from '@/components/user-menu';
 import { BallotForm } from './ballot-form';
+import { BREADCRUMB_LIST, BREADCRUMB_LINK } from '@/lib/ui-classes';
 
 export default async function BallotPage({ params }: { params: Promise<{ ownerId: string; slug: string }> }) {
   const { ownerId, slug } = await params;
@@ -52,9 +53,9 @@ export default async function BallotPage({ params }: { params: Promise<{ ownerId
       </header>
 
       <nav aria-label="Breadcrumb" className="max-w-[720px] w-full mx-auto pt-4 px-6 pb-0">
-        <ol className="breadcrumb-list">
+        <ol className={BREADCRUMB_LIST}>
           <li>
-            <Link href="/">Home</Link>
+            <Link href="/" className={BREADCRUMB_LINK}>Home</Link>
           </li>
           <li aria-hidden="true">/</li>
           <li aria-current="page" className="text-ink">

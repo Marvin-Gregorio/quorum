@@ -62,7 +62,7 @@ export function CandidatePhotoUpload({
           accept="image/*"
           onChange={handleFileChange}
           disabled={uploading}
-          className="visually-hidden"
+          className="sr-only"
         />
       </label>
       {error && <p role="alert">{error}</p>}

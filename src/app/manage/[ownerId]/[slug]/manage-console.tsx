@@ -8,6 +8,23 @@ import { initialsFor, colorClassForIndex } from '@/lib/avatar';
 import { cn } from '@/lib/cn';
 import { toRoman } from '@/lib/roman';
 import { useLiveVoteTallies, type Tally } from '@/lib/hooks/use-live-vote-tallies';
+import {
+  STATUS_BADGE_BASE,
+  STATUS_BADGE_VARIANT,
+  MODAL_OVERLAY,
+  MODAL_PANEL,
+  MODAL_PANEL_WIDE,
+  FIELD_LABEL,
+  TEXT_INPUT,
+  RADIO_OPTION,
+  RADIO_CHOICE_CLASS,
+  CHIP,
+  CHIP_REMOVE_BTN,
+  CANDIDATE_ROW,
+  PRIMARY_BTN,
+  SECONDARY_BTN,
+  avatarClass,
+} from '@/lib/ui-classes';
 
 export type { Tally };
 
@@ -270,28 +287,48 @@ export function ManageConsole({
           <p className="text-ink-2 text-sm m-0">{statusLine}</p>
         </div>
         <div className="flex items-center gap-3">
-          <span className="status-badge status-neutral">{privacyLabel}</span>
-          <button type="button" className="settings-btn" onClick={openSettingsModal}>
+          <span className={cn(STATUS_BADGE_BASE, STATUS_BADGE_VARIANT.neutral)}>{privacyLabel}</span>
+          <button
+            type="button"
+            className="bg-transparent border border-ink rounded-[3px] px-4 py-2 text-sm cursor-pointer text-ink whitespace-nowrap"
+            onClick={openSettingsModal}
+          >
             Edit settings
           </button>
         </div>
       </div>
 
       <div className="flex gap-6 flex-wrap mt-7">
-        <div className="link-row flex-[1_1_320px]">
+        <div className="flex-[1_1_320px]">
           <label className="block text-[13px] text-ink-2 mb-1.5">Ballot link</label>
           <div className="flex gap-2">
-            <input readOnly value={ballotUrl} />
-            <button type="button" onClick={() => copyLink('ballot', ballotUrl)}>
+            <input
+              readOnly
+              value={ballotUrl}
+              className="grow px-3 py-[10px] border border-line-strong rounded-[3px] bg-paper-2 text-sm text-ink"
+            />
+            <button
+              type="button"
+              className="border border-ink bg-transparent rounded-[3px] px-4 py-0 text-sm cursor-pointer"
+              onClick={() => copyLink('ballot', ballotUrl)}
+            >
               {copiedLink === 'ballot' ? 'Copied' : 'Copy'}
             </button>
           </div>
         </div>
-        <div className="link-row flex-[1_1_320px]">
+        <div className="flex-[1_1_320px]">
           <label className="block text-[13px] text-ink-2 mb-1.5">Results link</label>
           <div className="flex gap-2">
-            <input readOnly value={resultsUrl} />
-            <button type="button" onClick={() => copyLink('results', resultsUrl)}>
+            <input
+              readOnly
+              value={resultsUrl}
+              className="grow px-3 py-[10px] border border-line-strong rounded-[3px] bg-paper-2 text-sm text-ink"
+            />
+            <button
+              type="button"
+              className="border border-ink bg-transparent rounded-[3px] px-4 py-0 text-sm cursor-pointer"
+              onClick={() => copyLink('results', resultsUrl)}
+            >
               {copiedLink === 'results' ? 'Copied' : 'Copy'}
             </button>
           </div>
@@ -324,10 +361,10 @@ export function ManageConsole({
           </div>
           <div>
             {pos.candidates.map((cand, ci) => (
-              <div className="candidate-row items-start" key={cand.id}>
+              <div className={cn(CANDIDATE_ROW, 'items-start')} key={cand.id}>
                 <div className="flex items-start gap-3.5">
                   <div
-                    className={cn('avatar', !cand.photoUrl && colorClassForIndex(ci))}
+                    className={cn(avatarClass('md'), !cand.photoUrl && colorClassForIndex(ci))}
                     style={cand.photoUrl ? { backgroundImage: `url(${cand.photoUrl})` } : undefined}
                   >
                     {!cand.photoUrl && initialsFor(cand.name)}
@@ -341,7 +378,11 @@ export function ManageConsole({
                     )}
                   </div>
                 </div>
-                <button type="button" className="edit-link" onClick={() => openCandidateModal(pos.id, cand.id)}>
+                <button
+                  type="button"
+                  className="bg-transparent border-none text-sm text-ink-2 cursor-pointer underline underline-offset-2"
+                  onClick={() => openCandidateModal(pos.id, cand.id)}
+                >
                   Edit
                 </button>
               </div>
@@ -351,8 +392,8 @@ export function ManageConsole({
       ))}
 
       {candidateModal && (
-        <div className="modal-overlay">
-          <div role="dialog" aria-label="Edit candidate" className="modal-panel">
+        <div className={MODAL_OVERLAY}>
+          <div role="dialog" aria-label="Edit candidate" className={MODAL_PANEL}>
             <h2 className="text-xl mb-6">Edit candidate</h2>
             {candidateError && (
               <p role="alert" className="text-seal-dark text-sm mb-4">
@@ -373,11 +414,11 @@ export function ManageConsole({
               />
             </div>
             <div className="mb-4">
-              <label className="field-label" htmlFor="cm-name">
+              <label className={FIELD_LABEL} htmlFor="cm-name">
                 Name
               </label>
               <input
-                className="text-input"
+                className={TEXT_INPUT}
                 id="cm-name"
                 type="text"
                 value={candidateModal.name}
@@ -385,11 +426,11 @@ export function ManageConsole({
               />
             </div>
             <div className="mb-7">
-              <label className="field-label" htmlFor="cm-bio">
+              <label className={FIELD_LABEL} htmlFor="cm-bio">
                 Platform statement
               </label>
               <textarea
-                className="text-input"
+                className={TEXT_INPUT}
                 id="cm-bio"
                 rows={3}
                 value={candidateModal.bio}
@@ -397,10 +438,10 @@ export function ManageConsole({
               />
             </div>
             <div className="flex justify-end gap-3">
-              <button type="button" className="secondary-btn" onClick={() => setCandidateModal(null)}>
+              <button type="button" className={SECONDARY_BTN} onClick={() => setCandidateModal(null)}>
                 Cancel
               </button>
-              <button type="button" className="primary-btn" onClick={saveCandidateModal} disabled={candidateSaving}>
+              <button type="button" className={PRIMARY_BTN} onClick={saveCandidateModal} disabled={candidateSaving}>
                 {candidateSaving ? 'Saving…' : 'Save candidate'}
               </button>
             </div>
@@ -409,8 +450,8 @@ export function ManageConsole({
       )}
 
       {settingsModal && (
-        <div className="modal-overlay">
-          <div role="dialog" aria-label="Election settings" className="modal-panel wide">
+        <div className={MODAL_OVERLAY}>
+          <div role="dialog" aria-label="Election settings" className={cn(MODAL_PANEL, MODAL_PANEL_WIDE)}>
             <h2 className="text-xl mb-6">Election settings</h2>
             {settingsError && (
               <p role="alert" className="text-seal-dark text-sm mb-4">
@@ -418,11 +459,11 @@ export function ManageConsole({
               </p>
             )}
             <div className="mb-5">
-              <label className="field-label" htmlFor="sm-org">
+              <label className={FIELD_LABEL} htmlFor="sm-org">
                 Organization name
               </label>
               <input
-                className="text-input"
+                className={TEXT_INPUT}
                 id="sm-org"
                 type="text"
                 value={settingsModal.orgName}
@@ -430,11 +471,11 @@ export function ManageConsole({
               />
             </div>
             <div className="mb-5">
-              <label className="field-label" htmlFor="sm-title">
+              <label className={FIELD_LABEL} htmlFor="sm-title">
                 Election title
               </label>
               <input
-                className="text-input"
+                className={TEXT_INPUT}
                 id="sm-title"
                 type="text"
                 value={settingsModal.title}
@@ -443,11 +484,11 @@ export function ManageConsole({
             </div>
             <div className="flex gap-4 flex-wrap mb-6">
               <div className="flex-[1_1_200px]">
-                <label className="field-label" htmlFor="sm-opens">
+                <label className={FIELD_LABEL} htmlFor="sm-opens">
                   Opens
                 </label>
                 <input
-                  className="text-input"
+                  className={TEXT_INPUT}
                   id="sm-opens"
                   type="datetime-local"
                   value={settingsModal.opens}
@@ -455,11 +496,11 @@ export function ManageConsole({
                 />
               </div>
               <div className="flex-[1_1_200px]">
-                <label className="field-label" htmlFor="sm-closes">
+                <label className={FIELD_LABEL} htmlFor="sm-closes">
                   Closes
                 </label>
                 <input
-                  className="text-input"
+                  className={TEXT_INPUT}
                   id="sm-closes"
                   type="datetime-local"
                   value={settingsModal.closes}
@@ -470,21 +511,21 @@ export function ManageConsole({
 
             <fieldset className="mb-3">
               <legend>Who can vote</legend>
-              <label className="radio-option">
+              <label className={RADIO_OPTION}>
                 <input
                   type="radio"
                   name="sm-visibility"
-                  className="choice"
+                  className={RADIO_CHOICE_CLASS}
                   checked={!settingsModal.isPrivate}
                   onChange={() => setSettingsModal({ ...settingsModal, isPrivate: false })}
                 />
                 <span>Anyone with a Google or Microsoft account</span>
               </label>
-              <label className="radio-option">
+              <label className={RADIO_OPTION}>
                 <input
                   type="radio"
                   name="sm-visibility"
-                  className="choice"
+                  className={RADIO_CHOICE_CLASS}
                   checked={settingsModal.isPrivate}
                   onChange={() => setSettingsModal({ ...settingsModal, isPrivate: true })}
                 />
@@ -496,9 +537,9 @@ export function ManageConsole({
               <div className="mb-7 pl-7">
                 <div className="flex gap-2 flex-wrap items-center mb-3">
                   {settingsModal.domains.map((domain) => (
-                    <span className="chip" key={domain}>
+                    <span className={CHIP} key={domain}>
                       {domain}
-                      <button type="button" onClick={() => removeSettingsDomain(domain)} aria-label={`Remove ${domain}`}>
+                      <button type="button" className={CHIP_REMOVE_BTN} onClick={() => removeSettingsDomain(domain)} aria-label={`Remove ${domain}`}>
                         &times;
                       </button>
                     </span>
@@ -506,7 +547,7 @@ export function ManageConsole({
                 </div>
                 <div className="flex gap-2">
                   <input
-                    className="text-input"
+                    className={TEXT_INPUT}
                     type="text"
                     placeholder="Add a domain, e.g. riverside.coop"
                     value={settingsModal.domainInput}
@@ -530,10 +571,10 @@ export function ManageConsole({
             )}
 
             <div className="flex justify-end gap-3">
-              <button type="button" className="secondary-btn" onClick={() => setSettingsModal(null)}>
+              <button type="button" className={SECONDARY_BTN} onClick={() => setSettingsModal(null)}>
                 Cancel
               </button>
-              <button type="button" className="primary-btn" onClick={saveSettingsModal} disabled={settingsSaving}>
+              <button type="button" className={PRIMARY_BTN} onClick={saveSettingsModal} disabled={settingsSaving}>
                 {settingsSaving ? 'Saving…' : 'Save changes'}
               </button>
             </div>

@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import { PRIMARY_BTN, SIGNIN_BTN } from '@/lib/ui-classes';
+import { cn } from '@/lib/cn';
 
 export default function HomePage() {
   return (
@@ -11,7 +13,7 @@ export default function HomePage() {
           <a href="#how-it-works" className="no-underline">
             How it works
           </a>
-          <Link href="/sign-in" className="signin-btn">
+          <Link href="/sign-in" className={SIGNIN_BTN}>
             Sign in
           </Link>
         </nav>
@@ -27,7 +29,7 @@ export default function HomePage() {
             in as ballots are cast.
           </p>
           <div className="flex gap-4 flex-wrap items-center">
-            <Link href="/create" className="primary-btn px-7 py-[14px] text-base">
+            <Link href="/create" className={cn(PRIMARY_BTN, 'px-7 py-[14px] text-base')}>
               Create an election
             </Link>
           </div>

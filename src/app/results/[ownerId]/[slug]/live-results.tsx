@@ -6,6 +6,7 @@ import { initialsFor, colorClassForIndex } from '@/lib/avatar';
 import { cn } from '@/lib/cn';
 import { toRoman } from '@/lib/roman';
 import { useLiveVoteTallies } from '@/lib/hooks/use-live-vote-tallies';
+import { avatarClass } from '@/lib/ui-classes';
 
 export function LiveResults({
   ownerId,
@@ -83,7 +84,7 @@ export function LiveResults({
           const total = pos.candidates.reduce((sum, c) => sum + c.voteCount, 0);
           const maxVotes = Math.max(0, ...pos.candidates.map((c) => c.voteCount));
           return (
-            <div className="position-block" key={pos.id}>
+            <div className="border-t border-line pt-7 mt-7" key={pos.id}>
               <div className="flex items-baseline gap-3 mb-6">
                 <span className="font-['Fraunces',serif] italic text-lg text-ink-2">
                   {toRoman(pi + 1)}.
@@ -95,9 +96,9 @@ export function LiveResults({
                 const pct = total > 0 ? Math.round((cand.voteCount / total) * 100) : 0;
                 return (
                   <div className="mb-5" key={cand.id}>
-                    <div className="candidate-line">
-                      <div className="candidate-name-group">
-                        <div className={cn('avatar', colorClassForIndex(ci))}>
+                    <div className="flex justify-between items-center mb-2 gap-3">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className={cn(avatarClass('md'), colorClassForIndex(ci))}>
                           {initialsFor(cand.name)}
                         </div>
                         <span className={cn('text-base', isLeader ? 'font-semibold text-seal-dark' : 'font-medium text-ink')}>
@@ -108,9 +109,9 @@ export function LiveResults({
                         {cand.voteCount}
                       </span>
                     </div>
-                    <div className="bar-track">
+                    <div className="h-2.5 bg-paper-2 rounded-sm overflow-hidden">
                       <div
-                        className={cn('bar-fill', isLeader ? 'bg-seal' : 'bg-ink-2')}
+                        className={cn('h-full', isLeader ? 'bg-seal' : 'bg-ink-2')}
                         style={{ width: `${pct}%` }}
                       />
                     </div>

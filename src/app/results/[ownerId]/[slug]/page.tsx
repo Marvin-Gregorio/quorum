@@ -5,6 +5,7 @@ import { checkPageAccess } from '@/lib/access';
 import { getResultsSnapshot } from '@/lib/queries/results';
 import { UserMenu } from '@/components/user-menu';
 import { LiveResults } from './live-results';
+import { BREADCRUMB_LIST, BREADCRUMB_LINK, SIGNIN_BTN } from '@/lib/ui-classes';
 
 export default async function ResultsPage({ params }: { params: Promise<{ ownerId: string; slug: string }> }) {
   const { ownerId, slug } = await params;
@@ -53,16 +54,16 @@ export default async function ResultsPage({ params }: { params: Promise<{ ownerI
         {userData.user ? (
           <UserMenu name={profile?.full_name ?? null} email={profile?.email ?? userData.user.email ?? null} />
         ) : (
-          <Link href="/sign-in" className="signin-btn">
+          <Link href="/sign-in" className={SIGNIN_BTN}>
             Sign in
           </Link>
         )}
       </header>
 
       <nav aria-label="Breadcrumb" className="max-w-[820px] w-full mx-auto pt-4 px-6 pb-0">
-        <ol className="breadcrumb-list">
+        <ol className={BREADCRUMB_LIST}>
           <li>
-            <Link href="/">Home</Link>
+            <Link href="/" className={BREADCRUMB_LINK}>Home</Link>
           </li>
           <li aria-hidden="true">/</li>
           <li aria-current="page" className="text-ink">

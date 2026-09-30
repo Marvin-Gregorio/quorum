@@ -9,6 +9,22 @@ import { compressCandidatePhoto } from '@/lib/image-compression';
 import { updateCandidatePhotoAction } from '@/app/manage/[ownerId]/[slug]/actions';
 import { initialsFor, colorClassForIndex } from '@/lib/avatar';
 import { cn } from '@/lib/cn';
+import {
+  BREADCRUMB_LIST,
+  BREADCRUMB_LINK,
+  TEXT_INPUT,
+  FIELD_LABEL,
+  RADIO_OPTION,
+  RADIO_CHOICE_CLASS,
+  CHIP,
+  CHIP_REMOVE_BTN,
+  CANDIDATE_ROW,
+  MODAL_OVERLAY,
+  MODAL_PANEL,
+  PRIMARY_BTN,
+  SECONDARY_BTN,
+  avatarClass,
+} from '@/lib/ui-classes';
 
 type Candidate = { id: string; name: string; bio: string; photoFile: File | null; previewUrl: string | null };
 type Position = { id: string; title: string; candidates: Candidate[] };
@@ -185,9 +201,9 @@ export function CreateElectionForm() {
   return (
     <>
       <nav aria-label="Breadcrumb" className="max-w-[640px] w-full mx-auto pt-4 px-6 pb-0">
-        <ol className="breadcrumb-list">
+        <ol className={BREADCRUMB_LIST}>
           <li>
-            <Link href="/">Home</Link>
+            <Link href="/" className={BREADCRUMB_LINK}>Home</Link>
           </li>
           <li aria-hidden="true">/</li>
           <li aria-current="page" className="text-ink">
@@ -209,11 +225,11 @@ export function CreateElectionForm() {
         )}
 
         <div>
-          <label className="field-label" htmlFor="org-name">
+          <label className={FIELD_LABEL} htmlFor="org-name">
             Organization name
           </label>
           <input
-            className="text-input"
+            className={TEXT_INPUT}
             id="org-name"
             type="text"
             value={organizationName}
@@ -225,20 +241,20 @@ export function CreateElectionForm() {
           </p>
         </div>
 
-        <div className="section">
-          <label className="field-label" htmlFor="title">
+        <div className="border-t border-line mt-8 pt-8">
+          <label className={FIELD_LABEL} htmlFor="title">
             Election title
           </label>
-          <input className="text-input" id="title" type="text" value={title} onChange={(e) => setTitle(e.target.value)} />
+          <input className={TEXT_INPUT} id="title" type="text" value={title} onChange={(e) => setTitle(e.target.value)} />
         </div>
 
-        <div className="section flex gap-4 flex-wrap">
+        <div className="border-t border-line mt-8 pt-8 flex gap-4 flex-wrap">
           <div className="flex-[1_1_200px]">
-            <label className="field-label" htmlFor="opens">
+            <label className={FIELD_LABEL} htmlFor="opens">
               Opens
             </label>
             <input
-              className="text-input"
+              className={TEXT_INPUT}
               id="opens"
               type="datetime-local"
               value={votingStartsAt}
@@ -246,11 +262,11 @@ export function CreateElectionForm() {
             />
           </div>
           <div className="flex-[1_1_200px]">
-            <label className="field-label" htmlFor="closes">
+            <label className={FIELD_LABEL} htmlFor="closes">
               Closes
             </label>
             <input
-              className="text-input"
+              className={TEXT_INPUT}
               id="closes"
               type="datetime-local"
               value={votingEndsAt}
@@ -262,15 +278,15 @@ export function CreateElectionForm() {
           Once voting opens, positions and candidates can no longer be added or removed — only edited.
         </p>
 
-        <div className="section">
+        <div className="border-t border-line mt-8 pt-8">
           <fieldset>
             <legend>Who can vote</legend>
-            <label className="radio-option">
-              <input type="radio" name="visibility" className="choice" checked={!isPrivate} onChange={() => setIsPrivate(false)} />
+            <label className={RADIO_OPTION}>
+              <input type="radio" name="visibility" className={RADIO_CHOICE_CLASS} checked={!isPrivate} onChange={() => setIsPrivate(false)} />
               <span>Anyone with a Google or Microsoft account</span>
             </label>
-            <label className="radio-option">
-              <input type="radio" name="visibility" className="choice" checked={isPrivate} onChange={() => setIsPrivate(true)} />
+            <label className={RADIO_OPTION}>
+              <input type="radio" name="visibility" className={RADIO_CHOICE_CLASS} checked={isPrivate} onChange={() => setIsPrivate(true)} />
               <span>Only people with a specific email domain</span>
             </label>
           </fieldset>
@@ -278,9 +294,9 @@ export function CreateElectionForm() {
             <div className="mt-3 pl-7">
               <div className="flex gap-2 flex-wrap items-center mb-3">
                 {domains.map((domain) => (
-                  <span className="chip" key={domain}>
+                  <span className={CHIP} key={domain}>
                     {domain}
-                    <button type="button" onClick={() => removeDomain(domain)} aria-label={`Remove ${domain}`}>
+                    <button type="button" className={CHIP_REMOVE_BTN} onClick={() => removeDomain(domain)} aria-label={`Remove ${domain}`}>
                       &times;
                     </button>
                   </span>
@@ -288,7 +304,7 @@ export function CreateElectionForm() {
               </div>
               <div className="flex gap-2">
                 <input
-                  className="text-input"
+                  className={TEXT_INPUT}
                   type="text"
                   placeholder="Add a domain, e.g. riverside.coop"
                   value={domainInput}
@@ -312,19 +328,19 @@ export function CreateElectionForm() {
           )}
         </div>
 
-        <div className="section">
+        <div className="border-t border-line mt-8 pt-8">
           <h2 className="text-xl mb-1">Positions &amp; candidates</h2>
           <p className="text-[13px] text-ink-2 m-0 mb-5">
             Deleting a position also deletes its candidates.
           </p>
 
           {positions.map((pos) => (
-            <div className="position-block" key={pos.id}>
+            <div className="border-t border-line pt-7 mt-7" key={pos.id}>
               <div className="flex justify-between items-end gap-4 mb-4">
                 <div className="grow">
-                  <label className="field-label">Position title</label>
+                  <label className={FIELD_LABEL}>Position title</label>
                   <input
-                    className="text-input"
+                    className={TEXT_INPUT}
                     type="text"
                     value={pos.title}
                     onChange={(e) => updatePositionTitle(pos.id, e.target.value)}
@@ -332,7 +348,7 @@ export function CreateElectionForm() {
                 </div>
                 <button
                   type="button"
-                  className="delete-position-btn pb-[11px]"
+                  className="bg-transparent border-none text-seal-dark text-[13px] cursor-pointer underline underline-offset-2 whitespace-nowrap pb-[11px]"
                   onClick={() => deletePosition(pos.id)}
                 >
                   Delete position
@@ -342,10 +358,10 @@ export function CreateElectionForm() {
               {pos.candidates.length > 0 ? (
                 <div>
                   {pos.candidates.map((cand, ci) => (
-                    <div className="candidate-row items-start" key={cand.id}>
+                    <div className={cn(CANDIDATE_ROW, 'items-start')} key={cand.id}>
                       <div className="flex items-start gap-3.5">
                         <div
-                          className={cn('avatar-sm', !cand.previewUrl && colorClassForIndex(ci))}
+                          className={cn(avatarClass('sm'), !cand.previewUrl && colorClassForIndex(ci))}
                           style={cand.previewUrl ? { backgroundImage: `url(${cand.previewUrl})` } : undefined}
                         >
                           {!cand.previewUrl && initialsFor(cand.name)}
@@ -359,17 +375,25 @@ export function CreateElectionForm() {
                           )}
                         </div>
                       </div>
-                      <button type="button" className="edit-link" onClick={() => openEditCandidate(pos.id, cand.id)}>
+                      <button
+                        type="button"
+                        className="bg-transparent border-none text-sm text-ink-2 cursor-pointer underline underline-offset-2"
+                        onClick={() => openEditCandidate(pos.id, cand.id)}
+                      >
                         Edit
                       </button>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="no-candidates">No candidates yet.</p>
+                <p className="text-sm text-ink-2 py-4 border-t border-line">No candidates yet.</p>
               )}
 
-              <button type="button" className="dashed-btn mt-3" onClick={() => openAddCandidate(pos.id)}>
+              <button
+                type="button"
+                className="bg-transparent border border-dashed border-line-strong rounded-[3px] px-5 py-3 text-sm text-ink-2 cursor-pointer w-full text-left mt-3"
+                onClick={() => openAddCandidate(pos.id)}
+              >
                 + Add a candidate
               </button>
             </div>
@@ -377,23 +401,23 @@ export function CreateElectionForm() {
 
           <button
             type="button"
-            className="dashed-btn mt-5 border-solid text-ink"
+            className="bg-transparent border border-solid border-line-strong rounded-[3px] px-5 py-3 text-sm text-ink cursor-pointer w-full text-left mt-5"
             onClick={addPosition}
           >
             + Add a position
           </button>
         </div>
 
-        <div className="section flex justify-end">
-          <button type="submit" className="primary-btn px-8 py-[14px] text-base" disabled={submitting}>
+        <div className="border-t border-line mt-8 pt-8 flex justify-end">
+          <button type="submit" className={cn(PRIMARY_BTN, 'px-8 py-[14px] text-base')} disabled={submitting}>
             {submitting ? 'Creating…' : 'Create election'}
           </button>
         </div>
       </form>
 
       {modal && (
-        <div className="modal-overlay">
-          <div role="dialog" aria-label="Candidate" className="modal-panel">
+        <div className={MODAL_OVERLAY}>
+          <div role="dialog" aria-label="Candidate" className={MODAL_PANEL}>
             <h2 className="text-xl mb-6">{modal.candidateId ? 'Edit candidate' : 'Add a candidate'}</h2>
 
             <div className="flex items-center gap-4 mb-6">
@@ -407,9 +431,9 @@ export function CreateElectionForm() {
                 {!modal.previewUrl && initialsFor(modal.name)}
               </div>
               <div>
-                <label className="upload-btn">
+                <label className="inline-block border border-ink bg-transparent rounded-[3px] px-4 py-2 text-sm cursor-pointer text-ink">
                   Upload photo
-                  <input className="visually-hidden" type="file" accept="image/*" onChange={onModalPhotoChange} />
+                  <input className="sr-only" type="file" accept="image/*" onChange={onModalPhotoChange} />
                 </label>
                 <p className="text-xs text-ink-2 mt-2 mb-0 leading-[1.5] max-w-[26ch]">
                   Resized and compressed automatically before upload.
@@ -418,11 +442,11 @@ export function CreateElectionForm() {
             </div>
 
             <div className="mb-4">
-              <label className="field-label" htmlFor="m-name">
+              <label className={FIELD_LABEL} htmlFor="m-name">
                 Name
               </label>
               <input
-                className="text-input"
+                className={TEXT_INPUT}
                 id="m-name"
                 type="text"
                 value={modal.name}
@@ -430,11 +454,11 @@ export function CreateElectionForm() {
               />
             </div>
             <div className="mb-7">
-              <label className="field-label" htmlFor="m-bio">
+              <label className={FIELD_LABEL} htmlFor="m-bio">
                 Platform statement
               </label>
               <textarea
-                className="text-input"
+                className={TEXT_INPUT}
                 id="m-bio"
                 rows={3}
                 value={modal.bio}
@@ -455,10 +479,10 @@ export function CreateElectionForm() {
                 <span />
               )}
               <div className="flex gap-3">
-                <button type="button" className="secondary-btn" onClick={closeModal}>
+                <button type="button" className={SECONDARY_BTN} onClick={closeModal}>
                   Cancel
                 </button>
-                <button type="button" className="primary-btn" onClick={saveCandidate}>
+                <button type="button" className={PRIMARY_BTN} onClick={saveCandidate}>
                   Save candidate
                 </button>
               </div>

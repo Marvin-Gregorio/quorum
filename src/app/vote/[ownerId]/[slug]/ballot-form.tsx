@@ -5,7 +5,13 @@ import { castVoteAction } from './actions';
 import { initialsFor, colorClassForIndex } from '@/lib/avatar';
 import { cn } from '@/lib/cn';
 import { toRoman } from '@/lib/roman';
+import { PRIMARY_BTN, avatarClass } from '@/lib/ui-classes';
 import type { Ballot } from '@/lib/queries/ballot';
+
+const RADIO_BUBBLE_CLASS =
+  'appearance-none w-[22px] h-[22px] rounded-full border-2 border-ink-2 mt-0.5 shrink-0 cursor-pointer bg-paper ' +
+  'transition-all duration-150 ease-in-out checked:border-seal checked:bg-seal ' +
+  'checked:shadow-[inset_0_0_0_4px_var(--color-paper)]';
 
 export function BallotForm({ ballot }: { ballot: Ballot }) {
   const [selections, setSelections] = useState<Record<string, string | null>>(
@@ -70,24 +76,30 @@ export function BallotForm({ ballot }: { ballot: Ballot }) {
             </span>{' '}
             <span className="font-['Fraunces',serif] text-2xl">{pos.title}</span>
           </legend>
-          <div className="ballot-list">
+          <div className="border-t border-line">
             {pos.candidates.map((cand, ci) => (
-              <label className="ballot-row" key={cand.id}>
+              <label
+                className={cn(
+                  'group flex gap-4 items-start px-1 py-5 border-b border-line cursor-pointer',
+                  'transition-colors duration-150 ease-in-out hover:bg-paper-2 has-checked:bg-paper-2'
+                )}
+                key={cand.id}
+              >
                 <input
                   type="radio"
                   name={`pos-${pos.id}`}
-                  className="bubble"
+                  className={RADIO_BUBBLE_CLASS}
                   checked={selections[pos.id] === cand.id}
                   onChange={() => setSelections((prev) => ({ ...prev, [pos.id]: cand.id }))}
                 />
                 <div
-                  className={cn('avatar', !cand.photoUrl && colorClassForIndex(ci))}
+                  className={cn(avatarClass('md'), !cand.photoUrl && colorClassForIndex(ci))}
                   style={cand.photoUrl ? { backgroundImage: `url(${cand.photoUrl})` } : undefined}
                 >
                   {!cand.photoUrl && initialsFor(cand.name)}
                 </div>
                 <div>
-                  <div className="cand-name font-semibold text-base">
+                  <div className="font-semibold text-base group-has-checked:text-seal-dark">
                     {cand.name}
                   </div>
                   <div className="text-ink-2 text-sm leading-[1.5] mt-1">{cand.bio}</div>
@@ -106,7 +118,7 @@ export function BallotForm({ ballot }: { ballot: Ballot }) {
         </p>
         <button
           type="submit"
-          className="primary-btn px-8 py-[14px] text-base"
+          className={cn(PRIMARY_BTN, 'px-8 py-[14px] text-base')}
           disabled={submitting || !allSelected}
         >
           {submitting ? 'Casting…' : 'Cast your vote'}
