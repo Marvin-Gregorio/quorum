@@ -24,6 +24,7 @@ import {
   PRIMARY_BTN,
   SECONDARY_BTN,
   avatarClass,
+  avatarImgClass,
 } from '@/lib/ui-classes';
 
 export type { Tally };
@@ -363,12 +364,13 @@ export function ManageConsole({
             {pos.candidates.map((cand, ci) => (
               <div className={cn(CANDIDATE_ROW, 'items-start')} key={cand.id}>
                 <div className="flex items-start gap-3.5">
-                  <div
-                    className={cn(avatarClass('md'), !cand.photoUrl && colorClassForIndex(ci))}
-                    style={cand.photoUrl ? { backgroundImage: `url(${cand.photoUrl})` } : undefined}
-                  >
-                    {!cand.photoUrl && initialsFor(cand.name)}
-                  </div>
+                  {cand.photoUrl ? (
+                    <img src={cand.photoUrl} alt="" className={avatarImgClass('md')} />
+                  ) : (
+                    <div className={cn(avatarClass('md'), colorClassForIndex(ci))}>
+                      {initialsFor(cand.name)}
+                    </div>
+                  )}
                   <div>
                     <div className="font-medium">{cand.name}</div>
                     {cand.bio && (
@@ -401,12 +403,13 @@ export function ManageConsole({
               </p>
             )}
             <div className="flex items-center gap-4 mb-6">
-              <div
-                className="w-[72px] h-[72px] rounded-full bg-line-strong flex items-center justify-center text-paper font-['Fraunces',serif] text-[22px] font-semibold shrink-0 bg-cover bg-center"
-                style={candidateModal.photoUrl ? { backgroundImage: `url(${candidateModal.photoUrl})` } : undefined}
-              >
-                {!candidateModal.photoUrl && initialsFor(candidateModal.name)}
-              </div>
+              {candidateModal.photoUrl ? (
+                <img src={candidateModal.photoUrl} alt="" className="w-[72px] h-[72px] rounded-full object-cover shrink-0" />
+              ) : (
+                <div className="w-[72px] h-[72px] rounded-full bg-line-strong flex items-center justify-center text-paper font-['Fraunces',serif] text-[22px] font-semibold shrink-0">
+                  {initialsFor(candidateModal.name)}
+                </div>
+              )}
               <CandidatePhotoUpload
                 candidateId={candidateModal.candidateId}
                 pageId={pageId}

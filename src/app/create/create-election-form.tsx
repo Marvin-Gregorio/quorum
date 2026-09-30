@@ -24,6 +24,7 @@ import {
   PRIMARY_BTN,
   SECONDARY_BTN,
   avatarClass,
+  avatarImgClass,
 } from '@/lib/ui-classes';
 
 type Candidate = { id: string; name: string; bio: string; photoFile: File | null; previewUrl: string | null };
@@ -360,12 +361,13 @@ export function CreateElectionForm() {
                   {pos.candidates.map((cand, ci) => (
                     <div className={cn(CANDIDATE_ROW, 'items-start')} key={cand.id}>
                       <div className="flex items-start gap-3.5">
-                        <div
-                          className={cn(avatarClass('sm'), !cand.previewUrl && colorClassForIndex(ci))}
-                          style={cand.previewUrl ? { backgroundImage: `url(${cand.previewUrl})` } : undefined}
-                        >
-                          {!cand.previewUrl && initialsFor(cand.name)}
-                        </div>
+                        {cand.previewUrl ? (
+                          <img src={cand.previewUrl} alt="" className={avatarImgClass('sm')} />
+                        ) : (
+                          <div className={cn(avatarClass('sm'), colorClassForIndex(ci))}>
+                            {initialsFor(cand.name)}
+                          </div>
+                        )}
                         <div>
                           <div className="font-medium">{cand.name || 'Untitled candidate'}</div>
                           {cand.bio && (
@@ -421,15 +423,18 @@ export function CreateElectionForm() {
             <h2 className="text-xl mb-6">{modal.candidateId ? 'Edit candidate' : 'Add a candidate'}</h2>
 
             <div className="flex items-center gap-4 mb-6">
-              <div
-                className={cn(
-                  'w-[72px] h-[72px] rounded-full flex items-center justify-center text-paper font-[\'Fraunces\',serif] text-[22px] font-semibold shrink-0 bg-cover bg-center',
-                  !modal.previewUrl && modal.colorClass
-                )}
-                style={modal.previewUrl ? { backgroundImage: `url(${modal.previewUrl})` } : undefined}
-              >
-                {!modal.previewUrl && initialsFor(modal.name)}
-              </div>
+              {modal.previewUrl ? (
+                <img src={modal.previewUrl} alt="" className="w-[72px] h-[72px] rounded-full object-cover shrink-0" />
+              ) : (
+                <div
+                  className={cn(
+                    'w-[72px] h-[72px] rounded-full flex items-center justify-center text-paper font-[\'Fraunces\',serif] text-[22px] font-semibold shrink-0',
+                    modal.colorClass
+                  )}
+                >
+                  {initialsFor(modal.name)}
+                </div>
+              )}
               <div>
                 <label className="inline-block border border-ink bg-transparent rounded-[3px] px-4 py-2 text-sm cursor-pointer text-ink">
                   Upload photo

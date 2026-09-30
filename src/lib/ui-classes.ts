@@ -33,10 +33,18 @@ export const STATUS_BADGE_VARIANT: Record<ElectionStatus, string> = {
   scheduled: 'bg-[rgba(70,87,59,0.14)] text-ledger border-[rgba(70,87,59,0.4)]',
 };
 
+function avatarShape(size: 'sm' | 'md'): string {
+  return size === 'sm' ? 'w-9 h-9 rounded-full shrink-0' : 'w-12 h-12 rounded-full shrink-0';
+}
+
+// For the initials fallback (no photo) — a colored circle centering text.
 export function avatarClass(size: 'sm' | 'md'): string {
-  return size === 'sm'
-    ? 'w-9 h-9 rounded-full flex items-center justify-center text-paper font-semibold text-xs shrink-0 bg-cover bg-center'
-    : 'w-12 h-12 rounded-full flex items-center justify-center text-paper font-semibold text-[15px] shrink-0 bg-cover bg-center';
+  return `${avatarShape(size)} flex items-center justify-center text-paper font-semibold ${size === 'sm' ? 'text-xs' : 'text-[15px]'}`;
+}
+
+// For an actual <img> once a photo URL exists.
+export function avatarImgClass(size: 'sm' | 'md'): string {
+  return `${avatarShape(size)} object-cover`;
 }
 
 export const RADIO_CHOICE_CLASS =

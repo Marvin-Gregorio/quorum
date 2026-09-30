@@ -5,7 +5,7 @@ import { castVoteAction } from './actions';
 import { initialsFor, colorClassForIndex } from '@/lib/avatar';
 import { cn } from '@/lib/cn';
 import { toRoman } from '@/lib/roman';
-import { PRIMARY_BTN, avatarClass } from '@/lib/ui-classes';
+import { PRIMARY_BTN, avatarClass, avatarImgClass } from '@/lib/ui-classes';
 import type { Ballot } from '@/lib/queries/ballot';
 
 const RADIO_BUBBLE_CLASS =
@@ -92,12 +92,13 @@ export function BallotForm({ ballot }: { ballot: Ballot }) {
                   checked={selections[pos.id] === cand.id}
                   onChange={() => setSelections((prev) => ({ ...prev, [pos.id]: cand.id }))}
                 />
-                <div
-                  className={cn(avatarClass('md'), !cand.photoUrl && colorClassForIndex(ci))}
-                  style={cand.photoUrl ? { backgroundImage: `url(${cand.photoUrl})` } : undefined}
-                >
-                  {!cand.photoUrl && initialsFor(cand.name)}
-                </div>
+                {cand.photoUrl ? (
+                  <img src={cand.photoUrl} alt="" className={avatarImgClass('md')} />
+                ) : (
+                  <div className={cn(avatarClass('md'), colorClassForIndex(ci))}>
+                    {initialsFor(cand.name)}
+                  </div>
+                )}
                 <div>
                   <div className="font-semibold text-base group-has-checked:text-seal-dark">
                     {cand.name}
