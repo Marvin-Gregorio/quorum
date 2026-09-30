@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { checkPageAccess } from '@/lib/access';
-import { getResultsSnapshot } from '@/lib/queries/results';
+import { getResultsSnapshot } from '@/services/results';
 import { UserMenu } from '@/components/user-menu';
 import { LiveResults } from './live-results';
 import { BREADCRUMB_LIST, BREADCRUMB_LINK, SIGNIN_BTN } from '@/lib/ui-classes';

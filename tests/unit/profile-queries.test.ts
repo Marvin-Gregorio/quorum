@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getManagedElections } from '@/lib/queries/profile';
+import { getManagedElections } from '@/services/profile';
 
 describe('getManagedElections', () => {
   it('marks a page whose window has passed as closed', async () => {

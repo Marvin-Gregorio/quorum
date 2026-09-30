@@ -89,6 +89,74 @@ details.
   that kind of thing) — not by describing what a well-named
   function/variable/class-string already makes obvious.
 
+## Code conventions
+
+- **File/folder naming: kebab-case everywhere** (`create-election-form.tsx`,
+  `ballot-form.tsx`). The exported component/function inside still uses
+  normal PascalCase/camelCase.
+- **`type`, not `interface`**, for every object shape — consistent, and
+  `interface`'s declaration-merging isn't something this codebase needs.
+- **A type used in only one file stays declared right above the code that
+  uses it.** The moment 2+ files need the same shape, move it out —
+  domain/DB-derived shapes go in `src/types/`; a type specific to one
+  feature's Server Actions can live next to them instead of in the global
+  folder.
+- **Database row/insert/update shapes always come from the generated
+  `Database` type, never hand-typed.** `npm run db:types` runs
+  `supabase gen types typescript --local > src/types/database.ts` — rerun it
+  after every migration and commit the result. `src/lib/supabase/types.ts`
+  just re-exports `Database` from there so existing client/server Supabase
+  wrapper imports don't need to change. `src/types/models.ts` re-exports one
+  named alias per table (`export type Page =
+  Database['public']['Tables']['pages']['Row']`, etc.) — import `Page`,
+  `Candidate`, `Position`, ... from there instead of writing
+  `Database['public']['Tables'][...]['Row']` inline. A service function's
+  own return shape (e.g. `Ballot`, `ManagedElection`) is still a
+  hand-written view-model type when it reshapes/joins/renames columns for
+  the UI — the rule is about not re-declaring a table's raw column shape,
+  not about banning transformation types.
+- **Server Components by default; `'use client'` only on the leaf that
+  actually needs interactivity, hooks, or a browser API** — push the client
+  boundary as low as possible rather than marking a whole page/section
+  client just because one small piece of it needs it.
+- **Split a component by responsibility — and a component file past ~300
+  lines is a strong signal it's doing more than one job.** A component
+  doing two distinct jobs (e.g. rendering a form and rendering a list) is a
+  signal to split regardless of size; past ~300 lines, treat that length
+  itself as the trigger to go look for a modal, a list section, or a form
+  section that can become its own named component (as done for
+  `manage-console.tsx` → `election-settings-modal.tsx` +
+  `candidate-edit-modal.tsx`, and `create-election-form.tsx` →
+  `positions-editor.tsx` + `candidate-modal.tsx`). The line count is a
+  trigger to go look, not a hard cap on its own — a single coherent piece
+  of UI that's long because the UI itself is long isn't automatically
+  wrong. A modal extracted this way should own its own draft/editing state
+  internally; the parent only tracks which item (if any) is being edited
+  and gets the final value back via an `onSaved` callback.
+- **Named exports for every component, except `page.tsx`/`layout.tsx`/
+  `route.ts`**, where Next.js requires a default export.
+- **A function should have a single responsibility.** If a function is
+  doing several distinct things — validating, then inserting a row, then
+  inserting related rows, then handling a retry — pull each concern into
+  its own small, named function and have the original compose them. Prefer
+  several small functions you can name accurately over one that needs a
+  paragraph to describe.
+- **All business logic lives in `src/services/`, one file per domain**
+  (`elections.ts`, `manage.ts`, `ballot.ts`, etc.) — reads and writes alike.
+  Server Actions and Server Components call service functions; neither
+  talks to Supabase directly. A Server Action's own job is: parse/validate
+  input (Zod), resolve the current user, call the service, and return its
+  result — never construct a query itself. A helper used by only one
+  action can stay local to that action file; once 2+ files need it, it
+  moves into the matching service module.
+- **Server Actions are colocated as `actions.ts` next to the route** that
+  calls them (`src/app/manage/[ownerId]/[slug]/actions.ts`, etc.) and
+  **return a typed result — the success shape or `{ error: string }` —
+  never throw** across the server/client boundary. The client reads
+  `'error' in result` and renders accordingly.
+- **`@/` absolute alias for every import**, regardless of how close the two
+  files are — no `../../..` chains.
+
 ## Business rules
 
 ### Ownership & roles

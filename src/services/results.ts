@@ -1,5 +1,10 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/lib/supabase/types';
+import type { Candidate, Position, VoteTally } from '@/types/models';
+
+type PositionWithCandidates = Pick<Position, 'id' | 'title'> & {
+  candidates: Pick<Candidate, 'id' | 'name'>[];
+};
 
 export interface ResultsSnapshot {
   pageId: string;
@@ -27,24 +32,26 @@ export async function getResultsSnapshot(
     .select('id, title, candidates!candidates_position_id_fkey(id, name)')
     .eq('page_id', page.id)
     .order('display_order');
+  const positions = (positionRows ?? []) as unknown as PositionWithCandidates[];
 
-  const positionIds = (positionRows ?? []).map((p: any) => p.id);
+  const positionIds = positions.map((p) => p.id);
   const { data: tallyRows } = await supabase
     .from('vote_tallies')
     .select('position_id, candidate_id, vote_count')
     .in('position_id', positionIds);
+  const tallies = (tallyRows ?? []) as Pick<VoteTally, 'position_id' | 'candidate_id' | 'vote_count'>[];
 
   const countFor = (positionId: string, candidateId: string) =>
-    (tallyRows ?? []).find((t: any) => t.position_id === positionId && t.candidate_id === candidateId)?.vote_count ?? 0;
+    tallies.find((t) => t.position_id === positionId && t.candidate_id === candidateId)?.vote_count ?? 0;
 
   return {
     pageId: page.id,
     title: page.title,
     organizationName: page.organization_name,
-    positions: (positionRows ?? []).map((p: any) => ({
+    positions: positions.map((p) => ({
       id: p.id,
       title: p.title,
-      candidates: (p.candidates ?? []).map((c: any) => ({
+      candidates: p.candidates.map((c) => ({
         id: c.id,
         name: c.name,
         voteCount: countFor(p.id, c.id),

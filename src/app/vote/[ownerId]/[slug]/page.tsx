@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { checkPageAccess } from '@/lib/access';
-import { getBallot } from '@/lib/queries/ballot';
+import { getBallot } from '@/services/ballot';
 import { UserMenu } from '@/components/user-menu';
 import { BallotForm } from './ballot-form';
 import { BREADCRUMB_LIST, BREADCRUMB_LINK } from '@/lib/ui-classes';

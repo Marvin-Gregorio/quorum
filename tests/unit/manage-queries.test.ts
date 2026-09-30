@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { getManagedElection } from '@/lib/queries/manage';
+import { getManagedElection } from '@/services/manage';
 
 describe('getManagedElection', () => {
   it('returns null when no page matches the slug', async () => {

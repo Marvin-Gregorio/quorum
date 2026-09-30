@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getResultsSnapshot } from '@/lib/queries/results';
+import { getResultsSnapshot } from '@/services/results';
 
 describe('getResultsSnapshot', () => {
   it('returns candidates with their current vote counts', async () => {

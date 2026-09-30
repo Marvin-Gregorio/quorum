@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { checkPageAccess } from '@/lib/access';
-import { getManagedElection } from '@/lib/queries/manage';
+import { getManagedElection } from '@/services/manage';
 import { UserMenu } from '@/components/user-menu';
 import { ManageConsole, type Tally, type Turnout } from './manage-console';
 import { BREADCRUMB_LIST, BREADCRUMB_LINK } from '@/lib/ui-classes';
