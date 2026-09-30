@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { createBrowserSupabaseClient } from '@/lib/supabase/client';
 import { updateElectionSettingsAction, updateCandidateAction } from './actions';
 import { CandidatePhotoUpload } from './candidate-photo-upload';
-import { initialsFor, colorForIndex } from '@/lib/avatar';
+import { initialsFor, colorClassForIndex } from '@/lib/avatar';
+import { cn } from '@/lib/cn';
 import { toRoman } from '@/lib/roman';
 import { useLiveVoteTallies, type Tally } from '@/lib/hooks/use-live-vote-tallies';
 
@@ -261,14 +262,14 @@ export function ManageConsole({
         : `Open now, from ${formatDateTime(votingStartsAt)} through ${formatDateTime(votingEndsAt)}.`;
 
   return (
-    <div style={{ maxWidth: 900, margin: '0 auto', width: '100%', padding: '24px 24px 64px', flexGrow: 1 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap' }}>
+    <div className="max-w-[900px] mx-auto w-full px-6 pt-6 pb-16 grow">
+      <div className="flex justify-between items-start gap-4 flex-wrap">
         <div>
-          <p style={{ fontSize: 14, color: 'var(--ink-2)', margin: '0 0 4px' }}>{organizationName}</p>
-          <h1 style={{ fontSize: 'clamp(26px,4vw,32px)', margin: '0 0 8px' }}>{title}</h1>
-          <p style={{ color: 'var(--ink-2)', fontSize: 14, margin: 0 }}>{statusLine}</p>
+          <p className="text-sm text-ink-2 m-0 mb-1">{organizationName}</p>
+          <h1 className="text-[clamp(26px,4vw,32px)] m-0 mb-2">{title}</h1>
+          <p className="text-ink-2 text-sm m-0">{statusLine}</p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div className="flex items-center gap-3">
           <span className="status-badge status-neutral">{privacyLabel}</span>
           <button type="button" className="settings-btn" onClick={openSettingsModal}>
             Edit settings
@@ -276,19 +277,19 @@ export function ManageConsole({
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', marginTop: 28 }}>
-        <div className="link-row" style={{ flex: '1 1 320px' }}>
-          <label style={{ display: 'block', fontSize: 13, color: 'var(--ink-2)', marginBottom: 6 }}>Ballot link</label>
-          <div style={{ display: 'flex', gap: 8 }}>
+      <div className="flex gap-6 flex-wrap mt-7">
+        <div className="link-row flex-[1_1_320px]">
+          <label className="block text-[13px] text-ink-2 mb-1.5">Ballot link</label>
+          <div className="flex gap-2">
             <input readOnly value={ballotUrl} />
             <button type="button" onClick={() => copyLink('ballot', ballotUrl)}>
               {copiedLink === 'ballot' ? 'Copied' : 'Copy'}
             </button>
           </div>
         </div>
-        <div className="link-row" style={{ flex: '1 1 320px' }}>
-          <label style={{ display: 'block', fontSize: 13, color: 'var(--ink-2)', marginBottom: 6 }}>Results link</label>
-          <div style={{ display: 'flex', gap: 8 }}>
+        <div className="link-row flex-[1_1_320px]">
+          <label className="block text-[13px] text-ink-2 mb-1.5">Results link</label>
+          <div className="flex gap-2">
             <input readOnly value={resultsUrl} />
             <button type="button" onClick={() => copyLink('results', resultsUrl)}>
               {copiedLink === 'results' ? 'Copied' : 'Copy'}
@@ -297,49 +298,44 @@ export function ManageConsole({
         </div>
       </div>
 
-      <p style={{ margin: '28px 0 0', padding: '12px 16px', background: 'var(--paper-2)', borderRadius: 3, fontSize: 13, color: 'var(--ink-2)' }}>
+      <p className="mt-7 mb-0 px-4 py-3 bg-paper-2 rounded-[3px] text-[13px] text-ink-2">
         Positions and candidates are locked once voting opens. You can still edit an existing candidate&apos;s name, bio, or photo below.
       </p>
 
       {positions.map((pos, pi) => (
-        <div key={pos.id} style={{ borderTop: '1px solid var(--line)', marginTop: 32, paddingTop: 32 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16, marginBottom: 20 }}>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
-              <span style={{ fontFamily: "'Fraunces', serif", fontStyle: 'italic', fontSize: 18, color: 'var(--ink-2)' }}>
+        <div key={pos.id} className="border-t border-line mt-8 pt-8">
+          <div className="flex justify-between items-start flex-wrap gap-4 mb-5">
+            <div className="flex items-baseline gap-3">
+              <span className="font-['Fraunces',serif] italic text-lg text-ink-2">
                 {toRoman(pi + 1)}.
               </span>
-              <h2 style={{ fontSize: 22 }}>{pos.title}</h2>
+              <h2 className="text-[22px]">{pos.title}</h2>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: 'var(--ink-2)' }}>
+            <div className="flex items-center gap-2 text-sm text-ink-2">
               <svg width="20" height="16" viewBox="0 0 20 16" aria-hidden="true" focusable="false">
-                <line x1="2" y1="2" x2="2" y2="14" stroke="var(--ink-2)" strokeWidth="2" />
-                <line x1="7" y1="2" x2="7" y2="14" stroke="var(--ink-2)" strokeWidth="2" />
-                <line x1="12" y1="2" x2="12" y2="14" stroke="var(--ink-2)" strokeWidth="2" />
-                <line x1="17" y1="2" x2="17" y2="14" stroke="var(--ink-2)" strokeWidth="2" />
-                <line x1="0" y1="14" x2="19" y2="2" stroke="var(--ink-2)" strokeWidth="2" />
+                <line x1="2" y1="2" x2="2" y2="14" stroke="var(--color-ink-2)" strokeWidth="2" />
+                <line x1="7" y1="2" x2="7" y2="14" stroke="var(--color-ink-2)" strokeWidth="2" />
+                <line x1="12" y1="2" x2="12" y2="14" stroke="var(--color-ink-2)" strokeWidth="2" />
+                <line x1="17" y1="2" x2="17" y2="14" stroke="var(--color-ink-2)" strokeWidth="2" />
+                <line x1="0" y1="14" x2="19" y2="2" stroke="var(--color-ink-2)" strokeWidth="2" />
               </svg>
               {turnoutFor(pos.id)} people have voted
             </div>
           </div>
           <div>
             {pos.candidates.map((cand, ci) => (
-              <div className="candidate-row" key={cand.id} style={{ alignItems: 'flex-start' }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+              <div className="candidate-row items-start" key={cand.id}>
+                <div className="flex items-start gap-3.5">
                   <div
-                    className="avatar"
-                    style={{
-                      background: colorForIndex(ci),
-                      backgroundImage: cand.photoUrl ? `url(${cand.photoUrl})` : undefined,
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center',
-                    }}
+                    className={cn('avatar', !cand.photoUrl && colorClassForIndex(ci))}
+                    style={cand.photoUrl ? { backgroundImage: `url(${cand.photoUrl})` } : undefined}
                   >
                     {!cand.photoUrl && initialsFor(cand.name)}
                   </div>
                   <div>
-                    <div style={{ fontWeight: 500 }}>{cand.name}</div>
+                    <div className="font-medium">{cand.name}</div>
                     {cand.bio && (
-                      <div style={{ color: 'var(--ink-2)', fontSize: 13, lineHeight: 1.5, marginTop: 2 }}>
+                      <div className="text-ink-2 text-[13px] leading-[1.5] mt-0.5">
                         {cand.bio}
                       </div>
                     )}
@@ -357,31 +353,16 @@ export function ManageConsole({
       {candidateModal && (
         <div className="modal-overlay">
           <div role="dialog" aria-label="Edit candidate" className="modal-panel">
-            <h2 style={{ fontSize: 20, marginBottom: 24 }}>Edit candidate</h2>
+            <h2 className="text-xl mb-6">Edit candidate</h2>
             {candidateError && (
-              <p role="alert" style={{ color: 'var(--seal-dark)', fontSize: 14, marginBottom: 16 }}>
+              <p role="alert" className="text-seal-dark text-sm mb-4">
                 {candidateError}
               </p>
             )}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
+            <div className="flex items-center gap-4 mb-6">
               <div
-                style={{
-                  width: 72,
-                  height: 72,
-                  borderRadius: '50%',
-                  background: 'var(--line-strong)',
-                  backgroundImage: candidateModal.photoUrl ? `url(${candidateModal.photoUrl})` : undefined,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'var(--paper)',
-                  fontFamily: "'Fraunces', serif",
-                  fontSize: 22,
-                  fontWeight: 600,
-                  flexShrink: 0,
-                }}
+                className="w-[72px] h-[72px] rounded-full bg-line-strong flex items-center justify-center text-paper font-['Fraunces',serif] text-[22px] font-semibold shrink-0 bg-cover bg-center"
+                style={candidateModal.photoUrl ? { backgroundImage: `url(${candidateModal.photoUrl})` } : undefined}
               >
                 {!candidateModal.photoUrl && initialsFor(candidateModal.name)}
               </div>
@@ -391,7 +372,7 @@ export function ManageConsole({
                 onUploaded={(url) => setCandidateModal({ ...candidateModal, photoUrl: url })}
               />
             </div>
-            <div style={{ marginBottom: 16 }}>
+            <div className="mb-4">
               <label className="field-label" htmlFor="cm-name">
                 Name
               </label>
@@ -403,7 +384,7 @@ export function ManageConsole({
                 onChange={(e) => setCandidateModal({ ...candidateModal, name: e.target.value })}
               />
             </div>
-            <div style={{ marginBottom: 28 }}>
+            <div className="mb-7">
               <label className="field-label" htmlFor="cm-bio">
                 Platform statement
               </label>
@@ -415,7 +396,7 @@ export function ManageConsole({
                 onChange={(e) => setCandidateModal({ ...candidateModal, bio: e.target.value })}
               />
             </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
+            <div className="flex justify-end gap-3">
               <button type="button" className="secondary-btn" onClick={() => setCandidateModal(null)}>
                 Cancel
               </button>
@@ -430,13 +411,13 @@ export function ManageConsole({
       {settingsModal && (
         <div className="modal-overlay">
           <div role="dialog" aria-label="Election settings" className="modal-panel wide">
-            <h2 style={{ fontSize: 20, marginBottom: 24 }}>Election settings</h2>
+            <h2 className="text-xl mb-6">Election settings</h2>
             {settingsError && (
-              <p role="alert" style={{ color: 'var(--seal-dark)', fontSize: 14, marginBottom: 16 }}>
+              <p role="alert" className="text-seal-dark text-sm mb-4">
                 {settingsError}
               </p>
             )}
-            <div style={{ marginBottom: 20 }}>
+            <div className="mb-5">
               <label className="field-label" htmlFor="sm-org">
                 Organization name
               </label>
@@ -448,7 +429,7 @@ export function ManageConsole({
                 onChange={(e) => setSettingsModal({ ...settingsModal, orgName: e.target.value })}
               />
             </div>
-            <div style={{ marginBottom: 20 }}>
+            <div className="mb-5">
               <label className="field-label" htmlFor="sm-title">
                 Election title
               </label>
@@ -460,8 +441,8 @@ export function ManageConsole({
                 onChange={(e) => setSettingsModal({ ...settingsModal, title: e.target.value })}
               />
             </div>
-            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 24 }}>
-              <div style={{ flex: '1 1 200px' }}>
+            <div className="flex gap-4 flex-wrap mb-6">
+              <div className="flex-[1_1_200px]">
                 <label className="field-label" htmlFor="sm-opens">
                   Opens
                 </label>
@@ -473,7 +454,7 @@ export function ManageConsole({
                   onChange={(e) => setSettingsModal({ ...settingsModal, opens: e.target.value })}
                 />
               </div>
-              <div style={{ flex: '1 1 200px' }}>
+              <div className="flex-[1_1_200px]">
                 <label className="field-label" htmlFor="sm-closes">
                   Closes
                 </label>
@@ -487,7 +468,7 @@ export function ManageConsole({
               </div>
             </div>
 
-            <fieldset style={{ marginBottom: 12 }}>
+            <fieldset className="mb-3">
               <legend>Who can vote</legend>
               <label className="radio-option">
                 <input
@@ -512,8 +493,8 @@ export function ManageConsole({
             </fieldset>
 
             {settingsModal.isPrivate && (
-              <div style={{ marginBottom: 28, paddingLeft: 28 }}>
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 12 }}>
+              <div className="mb-7 pl-7">
+                <div className="flex gap-2 flex-wrap items-center mb-3">
                   {settingsModal.domains.map((domain) => (
                     <span className="chip" key={domain}>
                       {domain}
@@ -523,7 +504,7 @@ export function ManageConsole({
                     </span>
                   ))}
                 </div>
-                <div style={{ display: 'flex', gap: 8 }}>
+                <div className="flex gap-2">
                   <input
                     className="text-input"
                     type="text"
@@ -540,7 +521,7 @@ export function ManageConsole({
                   <button
                     type="button"
                     onClick={addSettingsDomain}
-                    style={{ border: '1px solid var(--ink)', background: 'none', borderRadius: 3, padding: '0 18px', fontSize: 14, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                    className="border border-ink bg-transparent rounded-[3px] px-[18px] py-0 text-sm cursor-pointer whitespace-nowrap"
                   >
                     Add
                   </button>
@@ -548,7 +529,7 @@ export function ManageConsole({
               </div>
             )}
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
+            <div className="flex justify-end gap-3">
               <button type="button" className="secondary-btn" onClick={() => setSettingsModal(null)}>
                 Cancel
               </button>

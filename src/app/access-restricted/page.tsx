@@ -34,33 +34,26 @@ export default async function AccessRestrictedPage({
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <header
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: '28px clamp(24px,5vw,64px)',
-        }}
-      >
-        <div style={{ fontFamily: "'Fraunces', serif", fontStyle: 'italic', fontWeight: 600, fontSize: 22 }}>
+    <div className="min-h-screen flex flex-col">
+      <header className="flex justify-between items-center p-[clamp(24px,5vw,64px)] py-7">
+        <div className="font-['Fraunces',serif] italic font-semibold text-[22px]">
           Quorum
         </div>
         {userData.user && <UserMenu name={null} email={userData.user.email ?? null} />}
       </header>
 
-      <div style={{ flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-        <div style={{ width: '100%', maxWidth: 420, textAlign: 'center' }}>
+      <div className="grow flex items-center justify-center p-6">
+        <div className="w-full max-w-[420px] text-center">
           <svg
             width="120"
             height="120"
             viewBox="0 0 120 120"
             role="img"
             aria-label="A stamp marked not eligible"
-            style={{ margin: '0 auto 32px', display: 'block' }}
+            className="mx-auto mb-8 block"
           >
-            <circle cx="60" cy="60" r="52" fill="none" stroke="var(--seal)" strokeWidth="3" opacity="0.85" />
-            <circle cx="60" cy="60" r="42" fill="none" stroke="var(--seal)" strokeWidth="1.5" opacity="0.85" />
+            <circle cx="60" cy="60" r="52" fill="none" stroke="var(--color-seal)" strokeWidth="3" opacity="0.85" />
+            <circle cx="60" cy="60" r="42" fill="none" stroke="var(--color-seal)" strokeWidth="1.5" opacity="0.85" />
             <text
               x="60"
               y="56"
@@ -68,7 +61,7 @@ export default async function AccessRestrictedPage({
               fontFamily="Fraunces, serif"
               fontWeight="700"
               fontSize="15"
-              fill="var(--seal)"
+              fill="var(--color-seal)"
               opacity="0.85"
               transform="rotate(-10 60 56)"
             >
@@ -81,7 +74,7 @@ export default async function AccessRestrictedPage({
               fontFamily="Fraunces, serif"
               fontStyle="italic"
               fontSize="11"
-              fill="var(--seal)"
+              fill="var(--color-seal)"
               opacity="0.85"
               transform="rotate(-10 60 76)"
             >
@@ -89,22 +82,21 @@ export default async function AccessRestrictedPage({
             </text>
           </svg>
 
-          <h1 style={{ fontSize: 24, marginBottom: 12 }}>{heading}</h1>
-          <p style={{ color: 'var(--ink-2)', fontSize: 15, lineHeight: 1.6, margin: '0 0 32px' }}>
+          <h1 className="text-2xl mb-3">{heading}</h1>
+          <p className="text-ink-2 text-[15px] leading-[1.6] m-0 mb-8">
             {userData.user?.email
               ? `You're signed in as ${userData.user.email}. Ask the organizer to add your email domain, or sign in with a different account.`
               : 'Ask the organizer to add your email domain, or sign in with a different account.'}
           </p>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'center' }}>
+          <div className="flex flex-col gap-3 items-center">
             <Link
               href={isSafeNextPath(next) ? `/sign-in?next=${encodeURIComponent(next)}` : '/sign-in'}
-              className="primary-btn"
-              style={{ padding: '14px 28px', fontSize: 15 }}
+              className="primary-btn px-7 py-[14px] text-[15px]"
             >
               Sign in with a different account
             </Link>
-            <Link href="/" style={{ fontSize: 14, textDecoration: 'underline', textUnderlineOffset: 3 }}>
+            <Link href="/" className="text-sm underline underline-offset-[3px]">
               Return home
             </Link>
           </div>

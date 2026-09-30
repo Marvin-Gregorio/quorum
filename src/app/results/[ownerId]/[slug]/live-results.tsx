@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import type { ResultsSnapshot } from '@/lib/queries/results';
-import { initialsFor, colorForIndex } from '@/lib/avatar';
+import { initialsFor, colorClassForIndex } from '@/lib/avatar';
+import { cn } from '@/lib/cn';
 import { toRoman } from '@/lib/roman';
 import { useLiveVoteTallies } from '@/lib/hooks/use-live-vote-tallies';
 
@@ -70,11 +71,11 @@ export function LiveResults({
 
   return (
     <>
-      <div style={{ maxWidth: 820, margin: '0 auto', width: '100%', padding: '24px 24px 64px', flexGrow: 1 }}>
-        <p style={{ fontSize: 14, color: 'var(--ink-2)', margin: '0 0 4px' }}>{snapshot.organizationName}</p>
-        <h1 style={{ fontSize: 'clamp(26px,4vw,34px)', margin: '0 0 16px' }}>{snapshot.title}</h1>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: 'var(--ink-2)' }}>
-          <span aria-hidden="true" style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--ledger)', display: 'inline-block' }} />
+      <div className="max-w-[820px] mx-auto w-full px-6 pt-6 pb-16 grow">
+        <p className="text-sm text-ink-2 m-0 mb-1">{snapshot.organizationName}</p>
+        <h1 className="text-[clamp(26px,4vw,34px)] m-0 mb-4">{snapshot.title}</h1>
+        <div className="flex items-center gap-2 text-sm text-ink-2">
+          <span aria-hidden="true" className="w-2 h-2 rounded-full bg-ledger inline-block" />
           Live results. Updates automatically as votes are cast.
         </div>
 
@@ -83,46 +84,34 @@ export function LiveResults({
           const maxVotes = Math.max(0, ...pos.candidates.map((c) => c.voteCount));
           return (
             <div className="position-block" key={pos.id}>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 24 }}>
-                <span style={{ fontFamily: "'Fraunces', serif", fontStyle: 'italic', fontSize: 18, color: 'var(--ink-2)' }}>
+              <div className="flex items-baseline gap-3 mb-6">
+                <span className="font-['Fraunces',serif] italic text-lg text-ink-2">
                   {toRoman(pi + 1)}.
                 </span>
-                <h2 style={{ fontSize: 22 }}>{pos.title}</h2>
+                <h2 className="text-[22px]">{pos.title}</h2>
               </div>
               {pos.candidates.map((cand, ci) => {
                 const isLeader = total > 0 && cand.voteCount === maxVotes;
                 const pct = total > 0 ? Math.round((cand.voteCount / total) * 100) : 0;
                 return (
-                  <div style={{ marginBottom: 20 }} key={cand.id}>
+                  <div className="mb-5" key={cand.id}>
                     <div className="candidate-line">
                       <div className="candidate-name-group">
-                        <div className="avatar" style={{ background: colorForIndex(ci) }}>
+                        <div className={cn('avatar', colorClassForIndex(ci))}>
                           {initialsFor(cand.name)}
                         </div>
-                        <span
-                          style={{
-                            fontWeight: isLeader ? 600 : 500,
-                            fontSize: 16,
-                            color: isLeader ? 'var(--seal-dark)' : 'var(--ink)',
-                          }}
-                        >
+                        <span className={cn('text-base', isLeader ? 'font-semibold text-seal-dark' : 'font-medium text-ink')}>
                           {cand.name}
                         </span>
                       </div>
-                      <span
-                        style={{
-                          fontFamily: "'Fraunces', serif",
-                          fontSize: 20,
-                          color: isLeader ? 'var(--seal-dark)' : 'var(--ink-2)',
-                        }}
-                      >
+                      <span className={cn('font-[\'Fraunces\',serif] text-xl', isLeader ? 'text-seal-dark' : 'text-ink-2')}>
                         {cand.voteCount}
                       </span>
                     </div>
                     <div className="bar-track">
                       <div
-                        className="bar-fill"
-                        style={{ width: `${pct}%`, background: isLeader ? 'var(--seal)' : 'var(--ink-2)' }}
+                        className={cn('bar-fill', isLeader ? 'bg-seal' : 'bg-ink-2')}
+                        style={{ width: `${pct}%` }}
                       />
                     </div>
                   </div>
@@ -133,7 +122,7 @@ export function LiveResults({
         })}
       </div>
 
-      <footer style={{ borderTop: '1px solid var(--line)', padding: '24px clamp(24px,5vw,64px)', fontSize: 13, color: 'var(--ink-2)' }}>
+      <footer className="border-t border-line py-6 px-[clamp(24px,5vw,64px)] text-[13px] text-ink-2">
         Results are shown as they&apos;re recorded. No one, including the election&apos;s organizer, can see how any
         individual person voted.
       </footer>

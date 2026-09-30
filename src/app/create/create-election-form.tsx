@@ -7,11 +7,12 @@ import { createElectionAction } from './actions';
 import { createBrowserSupabaseClient } from '@/lib/supabase/client';
 import { compressCandidatePhoto } from '@/lib/image-compression';
 import { updateCandidatePhotoAction } from '@/app/manage/[ownerId]/[slug]/actions';
-import { initialsFor, colorForIndex } from '@/lib/avatar';
+import { initialsFor, colorClassForIndex } from '@/lib/avatar';
+import { cn } from '@/lib/cn';
 
 type Candidate = { id: string; name: string; bio: string; photoFile: File | null; previewUrl: string | null };
 type Position = { id: string; title: string; candidates: Candidate[] };
-type Modal = { positionId: string; candidateId: string | null; name: string; bio: string; color: string; photoFile: File | null; previewUrl: string | null };
+type Modal = { positionId: string; candidateId: string | null; name: string; bio: string; colorClass: string; photoFile: File | null; previewUrl: string | null };
 
 let nextId = 1;
 function newLocalId() {
@@ -62,7 +63,7 @@ export function CreateElectionForm() {
       candidateId: null,
       name: '',
       bio: '',
-      color: colorForIndex(pos.candidates.length),
+      colorClass: colorClassForIndex(pos.candidates.length),
       photoFile: null,
       previewUrl: null,
     });
@@ -76,7 +77,7 @@ export function CreateElectionForm() {
       candidateId,
       name: cand.name,
       bio: cand.bio,
-      color: colorForIndex(pos.candidates.findIndex((c) => c.id === candidateId)),
+      colorClass: colorClassForIndex(pos.candidates.findIndex((c) => c.id === candidateId)),
       photoFile: cand.photoFile,
       previewUrl: cand.previewUrl,
     });
@@ -183,13 +184,13 @@ export function CreateElectionForm() {
 
   return (
     <>
-      <nav aria-label="Breadcrumb" style={{ maxWidth: 640, width: '100%', margin: '0 auto', padding: '16px 24px 0' }}>
+      <nav aria-label="Breadcrumb" className="max-w-[640px] w-full mx-auto pt-4 px-6 pb-0">
         <ol className="breadcrumb-list">
           <li>
             <Link href="/">Home</Link>
           </li>
           <li aria-hidden="true">/</li>
-          <li aria-current="page" style={{ color: 'var(--ink)' }}>
+          <li aria-current="page" className="text-ink">
             Create election
           </li>
         </ol>
@@ -197,12 +198,12 @@ export function CreateElectionForm() {
 
       <form
         onSubmit={handleSubmit}
-        style={{ maxWidth: 640, width: '100%', margin: '0 auto', padding: '24px 24px 96px', flexGrow: 1 }}
+        className="max-w-[640px] w-full mx-auto px-6 pt-6 pb-24 grow"
       >
-        <h1 style={{ fontSize: 'clamp(26px,4vw,32px)', marginBottom: 32 }}>Create an election</h1>
+        <h1 className="text-[clamp(26px,4vw,32px)] mb-8">Create an election</h1>
 
         {error && (
-          <p role="alert" style={{ color: 'var(--seal-dark)', fontSize: 14, marginBottom: 16 }}>
+          <p role="alert" className="text-seal-dark text-sm mb-4">
             {error}
           </p>
         )}
@@ -218,7 +219,7 @@ export function CreateElectionForm() {
             value={organizationName}
             onChange={(e) => setOrganizationName(e.target.value)}
           />
-          <p style={{ fontSize: 13, color: 'var(--ink-2)', margin: '8px 0 0' }}>
+          <p className="text-[13px] text-ink-2 mt-2 mb-0">
             Shown above the election title everywhere voters and viewers see it — reuse the same name across
             elections for the same organization.
           </p>
@@ -231,8 +232,8 @@ export function CreateElectionForm() {
           <input className="text-input" id="title" type="text" value={title} onChange={(e) => setTitle(e.target.value)} />
         </div>
 
-        <div className="section" style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-          <div style={{ flex: '1 1 200px' }}>
+        <div className="section flex gap-4 flex-wrap">
+          <div className="flex-[1_1_200px]">
             <label className="field-label" htmlFor="opens">
               Opens
             </label>
@@ -244,7 +245,7 @@ export function CreateElectionForm() {
               onChange={(e) => setVotingStartsAt(e.target.value)}
             />
           </div>
-          <div style={{ flex: '1 1 200px' }}>
+          <div className="flex-[1_1_200px]">
             <label className="field-label" htmlFor="closes">
               Closes
             </label>
@@ -257,7 +258,7 @@ export function CreateElectionForm() {
             />
           </div>
         </div>
-        <p style={{ fontSize: 13, color: 'var(--ink-2)', margin: '10px 0 0' }}>
+        <p className="text-[13px] text-ink-2 mt-2.5 mb-0">
           Once voting opens, positions and candidates can no longer be added or removed — only edited.
         </p>
 
@@ -274,8 +275,8 @@ export function CreateElectionForm() {
             </label>
           </fieldset>
           {isPrivate && (
-            <div style={{ marginTop: 12, paddingLeft: 28 }}>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 12 }}>
+            <div className="mt-3 pl-7">
+              <div className="flex gap-2 flex-wrap items-center mb-3">
                 {domains.map((domain) => (
                   <span className="chip" key={domain}>
                     {domain}
@@ -285,7 +286,7 @@ export function CreateElectionForm() {
                   </span>
                 ))}
               </div>
-              <div style={{ display: 'flex', gap: 8 }}>
+              <div className="flex gap-2">
                 <input
                   className="text-input"
                   type="text"
@@ -302,15 +303,7 @@ export function CreateElectionForm() {
                 <button
                   type="button"
                   onClick={addDomain}
-                  style={{
-                    border: '1px solid var(--ink)',
-                    background: 'none',
-                    borderRadius: 3,
-                    padding: '0 18px',
-                    fontSize: 14,
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap',
-                  }}
+                  className="border border-ink bg-transparent rounded-[3px] px-[18px] py-0 text-sm cursor-pointer whitespace-nowrap"
                 >
                   Add
                 </button>
@@ -320,15 +313,15 @@ export function CreateElectionForm() {
         </div>
 
         <div className="section">
-          <h2 style={{ fontSize: 20, marginBottom: 4 }}>Positions &amp; candidates</h2>
-          <p style={{ fontSize: 13, color: 'var(--ink-2)', margin: '0 0 20px' }}>
+          <h2 className="text-xl mb-1">Positions &amp; candidates</h2>
+          <p className="text-[13px] text-ink-2 m-0 mb-5">
             Deleting a position also deletes its candidates.
           </p>
 
           {positions.map((pos) => (
             <div className="position-block" key={pos.id}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 16, marginBottom: 16 }}>
-                <div style={{ flexGrow: 1 }}>
+              <div className="flex justify-between items-end gap-4 mb-4">
+                <div className="grow">
                   <label className="field-label">Position title</label>
                   <input
                     className="text-input"
@@ -339,9 +332,8 @@ export function CreateElectionForm() {
                 </div>
                 <button
                   type="button"
-                  className="delete-position-btn"
+                  className="delete-position-btn pb-[11px]"
                   onClick={() => deletePosition(pos.id)}
-                  style={{ paddingBottom: 11 }}
                 >
                   Delete position
                 </button>
@@ -350,23 +342,18 @@ export function CreateElectionForm() {
               {pos.candidates.length > 0 ? (
                 <div>
                   {pos.candidates.map((cand, ci) => (
-                    <div className="candidate-row" key={cand.id} style={{ alignItems: 'flex-start' }}>
-                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+                    <div className="candidate-row items-start" key={cand.id}>
+                      <div className="flex items-start gap-3.5">
                         <div
-                          className="avatar-sm"
-                          style={{
-                            background: colorForIndex(ci),
-                            backgroundImage: cand.previewUrl ? `url(${cand.previewUrl})` : undefined,
-                            backgroundSize: 'cover',
-                            backgroundPosition: 'center',
-                          }}
+                          className={cn('avatar-sm', !cand.previewUrl && colorClassForIndex(ci))}
+                          style={cand.previewUrl ? { backgroundImage: `url(${cand.previewUrl})` } : undefined}
                         >
                           {!cand.previewUrl && initialsFor(cand.name)}
                         </div>
                         <div>
-                          <div style={{ fontWeight: 500 }}>{cand.name || 'Untitled candidate'}</div>
+                          <div className="font-medium">{cand.name || 'Untitled candidate'}</div>
                           {cand.bio && (
-                            <div style={{ color: 'var(--ink-2)', fontSize: 13, lineHeight: 1.5, marginTop: 2 }}>
+                            <div className="text-ink-2 text-[13px] leading-[1.5] mt-0.5">
                               {cand.bio}
                             </div>
                           )}
@@ -382,7 +369,7 @@ export function CreateElectionForm() {
                 <p className="no-candidates">No candidates yet.</p>
               )}
 
-              <button type="button" className="dashed-btn" onClick={() => openAddCandidate(pos.id)} style={{ marginTop: 12 }}>
+              <button type="button" className="dashed-btn mt-3" onClick={() => openAddCandidate(pos.id)}>
                 + Add a candidate
               </button>
             </div>
@@ -390,16 +377,15 @@ export function CreateElectionForm() {
 
           <button
             type="button"
-            className="dashed-btn"
+            className="dashed-btn mt-5 border-solid text-ink"
             onClick={addPosition}
-            style={{ marginTop: 20, borderStyle: 'solid', color: 'var(--ink)' }}
           >
             + Add a position
           </button>
         </div>
 
-        <div className="section" style={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <button type="submit" className="primary-btn" style={{ padding: '14px 32px', fontSize: 16 }} disabled={submitting}>
+        <div className="section flex justify-end">
+          <button type="submit" className="primary-btn px-8 py-[14px] text-base" disabled={submitting}>
             {submitting ? 'Creating…' : 'Create election'}
           </button>
         </div>
@@ -408,27 +394,15 @@ export function CreateElectionForm() {
       {modal && (
         <div className="modal-overlay">
           <div role="dialog" aria-label="Candidate" className="modal-panel">
-            <h2 style={{ fontSize: 20, marginBottom: 24 }}>{modal.candidateId ? 'Edit candidate' : 'Add a candidate'}</h2>
+            <h2 className="text-xl mb-6">{modal.candidateId ? 'Edit candidate' : 'Add a candidate'}</h2>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
+            <div className="flex items-center gap-4 mb-6">
               <div
-                style={{
-                  width: 72,
-                  height: 72,
-                  borderRadius: '50%',
-                  background: modal.color,
-                  backgroundImage: modal.previewUrl ? `url(${modal.previewUrl})` : undefined,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'var(--paper)',
-                  fontFamily: "'Fraunces', serif",
-                  fontSize: 22,
-                  fontWeight: 600,
-                  flexShrink: 0,
-                }}
+                className={cn(
+                  'w-[72px] h-[72px] rounded-full flex items-center justify-center text-paper font-[\'Fraunces\',serif] text-[22px] font-semibold shrink-0 bg-cover bg-center',
+                  !modal.previewUrl && modal.colorClass
+                )}
+                style={modal.previewUrl ? { backgroundImage: `url(${modal.previewUrl})` } : undefined}
               >
                 {!modal.previewUrl && initialsFor(modal.name)}
               </div>
@@ -437,13 +411,13 @@ export function CreateElectionForm() {
                   Upload photo
                   <input className="visually-hidden" type="file" accept="image/*" onChange={onModalPhotoChange} />
                 </label>
-                <p style={{ fontSize: 12, color: 'var(--ink-2)', margin: '8px 0 0', lineHeight: 1.5, maxWidth: '26ch' }}>
+                <p className="text-xs text-ink-2 mt-2 mb-0 leading-[1.5] max-w-[26ch]">
                   Resized and compressed automatically before upload.
                 </p>
               </div>
             </div>
 
-            <div style={{ marginBottom: 16 }}>
+            <div className="mb-4">
               <label className="field-label" htmlFor="m-name">
                 Name
               </label>
@@ -455,7 +429,7 @@ export function CreateElectionForm() {
                 onChange={(e) => setModal({ ...modal, name: e.target.value })}
               />
             </div>
-            <div style={{ marginBottom: 28 }}>
+            <div className="mb-7">
               <label className="field-label" htmlFor="m-bio">
                 Platform statement
               </label>
@@ -468,19 +442,19 @@ export function CreateElectionForm() {
               />
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className="flex justify-between items-center">
               {modal.candidateId ? (
                 <button
                   type="button"
                   onClick={deleteCandidateFromModal}
-                  style={{ background: 'none', border: 'none', color: 'var(--seal-dark)', fontSize: 14, cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: 2 }}
+                  className="bg-transparent border-none text-seal-dark text-sm cursor-pointer underline underline-offset-2"
                 >
                   Delete candidate
                 </button>
               ) : (
                 <span />
               )}
-              <div style={{ display: 'flex', gap: 12 }}>
+              <div className="flex gap-3">
                 <button type="button" className="secondary-btn" onClick={closeModal}>
                   Cancel
                 </button>

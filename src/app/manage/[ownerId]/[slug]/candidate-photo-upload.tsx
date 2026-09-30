@@ -62,7 +62,7 @@ export function CandidatePhotoUpload({
           accept="image/*"
           onChange={handleFileChange}
           disabled={uploading}
-          style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0,0,0,0)' }}
+          className="visually-hidden"
         />
       </label>
       {error && <p role="alert">{error}</p>}

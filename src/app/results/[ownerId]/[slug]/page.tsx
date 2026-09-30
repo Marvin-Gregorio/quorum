@@ -45,17 +45,9 @@ export default async function ResultsPage({ params }: { params: Promise<{ ownerI
     : null;
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <header
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: '24px clamp(24px,5vw,64px)',
-          borderBottom: '1px solid var(--line)',
-        }}
-      >
-        <div style={{ fontFamily: "'Fraunces', serif", fontStyle: 'italic', fontWeight: 600, fontSize: 20 }}>
+    <div className="min-h-screen flex flex-col">
+      <header className="flex justify-between items-center px-[clamp(24px,5vw,64px)] py-6 border-b border-line">
+        <div className="font-['Fraunces',serif] italic font-semibold text-xl">
           Quorum
         </div>
         {userData.user ? (
@@ -67,13 +59,13 @@ export default async function ResultsPage({ params }: { params: Promise<{ ownerI
         )}
       </header>
 
-      <nav aria-label="Breadcrumb" style={{ maxWidth: 820, width: '100%', margin: '0 auto', padding: '16px 24px 0' }}>
+      <nav aria-label="Breadcrumb" className="max-w-[820px] w-full mx-auto pt-4 px-6 pb-0">
         <ol className="breadcrumb-list">
           <li>
             <Link href="/">Home</Link>
           </li>
           <li aria-hidden="true">/</li>
-          <li aria-current="page" style={{ color: 'var(--ink)' }}>
+          <li aria-current="page" className="text-ink">
             Results
           </li>
         </ol>

@@ -13,17 +13,9 @@ export default async function CreateElectionPage() {
   const { data: profile } = await supabase.from('profiles').select('*').eq('id', userData.user.id).single();
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <header
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: '24px clamp(24px,5vw,64px)',
-          borderBottom: '1px solid var(--line)',
-        }}
-      >
-        <div style={{ fontFamily: "'Fraunces', serif", fontStyle: 'italic', fontWeight: 600, fontSize: 20 }}>
+    <div className="min-h-screen flex flex-col">
+      <header className="flex justify-between items-center px-[clamp(24px,5vw,64px)] py-6 border-b border-line">
+        <div className="font-['Fraunces',serif] italic font-semibold text-xl">
           Quorum
         </div>
         <UserMenu name={profile?.full_name ?? null} email={profile?.email ?? userData.user.email ?? null} />

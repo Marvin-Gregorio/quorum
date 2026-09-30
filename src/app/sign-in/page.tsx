@@ -34,36 +34,36 @@ export default function SignInPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <header style={{ padding: '28px clamp(24px,5vw,64px)' }}>
-        <div style={{ fontFamily: "'Fraunces', serif", fontStyle: 'italic', fontWeight: 600, fontSize: 22 }}>
+    <div className="min-h-screen flex flex-col">
+      <header className="p-[clamp(24px,5vw,64px)] py-7">
+        <div className="font-['Fraunces',serif] italic font-semibold text-[22px]">
           Quorum
         </div>
       </header>
-      <div style={{ flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-        <div style={{ width: '100%', maxWidth: 380 }}>
-          <h1 style={{ fontSize: 28, marginBottom: 12 }}>Sign in to Quorum</h1>
-          <p style={{ color: 'var(--ink-2)', fontSize: 15, lineHeight: 1.6, margin: '0 0 32px' }}>
+      <div className="grow flex items-center justify-center p-6">
+        <div className="w-full max-w-[380px]">
+          <h1 className="text-[28px] mb-3">Sign in to Quorum</h1>
+          <p className="text-ink-2 text-[15px] leading-[1.6] m-0 mb-8">
             Sign in to vote, or to create and manage an election.
           </p>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div className="flex flex-col gap-3">
             <button type="button" className="oauth-btn" onClick={() => signInWith('google')}>
               <span className="g-mark">G</span>
               Continue with Google
             </button>
             <button type="button" className="oauth-btn" onClick={() => signInWith('azure')}>
               <span className="ms-mark">
-                <span style={{ background: 'var(--ink-2)' }} />
-                <span style={{ background: 'var(--seal)' }} />
-                <span style={{ background: 'var(--ledger)' }} />
-                <span style={{ background: 'var(--line-strong)' }} />
+                <span className="bg-ink-2" />
+                <span className="bg-seal" />
+                <span className="bg-ledger" />
+                <span className="bg-line-strong" />
               </span>
               Continue with Microsoft
             </button>
           </div>
 
-          <p style={{ color: 'var(--ink-2)', fontSize: 13, lineHeight: 1.6, margin: '28px 0 0' }}>
+          <p className="text-ink-2 text-[13px] leading-[1.6] mt-7 mb-0 mx-0">
             Your email address is only used to confirm you&apos;re eligible to vote — Quorum never posts on your
             behalf.
           </p>

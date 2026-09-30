@@ -31,7 +31,7 @@ export function UserMenu({ name, email }: { name: string | null; email: string |
         <span className="user-avatar">{initialsFor(displayName)}</span>
         <span className="user-name-text">{displayName}</span>
         <svg width="10" height="6" viewBox="0 0 10 6" aria-hidden="true">
-          <path d="M1 1L5 5L9 1" stroke="var(--ink-2)" strokeWidth="1.5" fill="none" />
+          <path d="M1 1L5 5L9 1" stroke="var(--color-ink-2)" strokeWidth="1.5" fill="none" />
         </svg>
       </button>
       {open && (
@@ -40,7 +40,7 @@ export function UserMenu({ name, email }: { name: string | null; email: string |
             Profile
           </Link>
           <form action={signOutAction}>
-            <button type="submit" role="menuitem" style={{ color: 'var(--seal-dark)' }}>
+            <button type="submit" role="menuitem" className="text-seal-dark">
               Sign out
             </button>
           </form>

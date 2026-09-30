@@ -9,8 +9,8 @@ export function initialsFor(name: string | null | undefined): string {
     .toUpperCase();
 }
 
-const PALETTE = ['var(--ink-2)', 'var(--seal)', 'var(--ledger)'];
+const PALETTE_CLASSES = ['bg-ink-2', 'bg-seal', 'bg-ledger'];
 
-export function colorForIndex(index: number): string {
-  return PALETTE[index % PALETTE.length];
+export function colorClassForIndex(index: number): string {
+  return PALETTE_CLASSES[index % PALETTE_CLASSES.length];
 }

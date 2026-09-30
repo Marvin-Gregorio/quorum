@@ -59,25 +59,15 @@ export default async function ManagePage({ params }: { params: Promise<{ ownerId
   }));
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <header
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: '24px clamp(24px,5vw,64px)',
-          borderBottom: '1px solid var(--line)',
-          flexWrap: 'wrap',
-          gap: 12,
-        }}
-      >
-        <div style={{ fontFamily: "'Fraunces', serif", fontStyle: 'italic', fontWeight: 600, fontSize: 20 }}>
+    <div className="min-h-screen flex flex-col">
+      <header className="flex justify-between items-center px-[clamp(24px,5vw,64px)] py-6 border-b border-line flex-wrap gap-3">
+        <div className="font-['Fraunces',serif] italic font-semibold text-xl">
           Quorum
         </div>
         <UserMenu name={profile?.full_name ?? null} email={profile?.email ?? userData.user.email ?? null} />
       </header>
 
-      <nav aria-label="Breadcrumb" style={{ maxWidth: 900, width: '100%', margin: '0 auto', padding: '16px 24px 0' }}>
+      <nav aria-label="Breadcrumb" className="max-w-[900px] w-full mx-auto pt-4 px-6 pb-0">
         <ol className="breadcrumb-list">
           <li>
             <Link href="/">Home</Link>
@@ -87,7 +77,7 @@ export default async function ManagePage({ params }: { params: Promise<{ ownerId
             <Link href="/profile">Profile</Link>
           </li>
           <li aria-hidden="true">/</li>
-          <li aria-current="page" style={{ color: 'var(--ink)' }}>
+          <li aria-current="page" className="text-ink">
             {election.title}
           </li>
         </ol>
