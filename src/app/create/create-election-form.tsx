@@ -350,8 +350,8 @@ export function CreateElectionForm() {
               {pos.candidates.length > 0 ? (
                 <div>
                   {pos.candidates.map((cand, ci) => (
-                    <div className="candidate-row" key={cand.id}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                    <div className="candidate-row" key={cand.id} style={{ alignItems: 'flex-start' }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
                         <div
                           className="avatar-sm"
                           style={{
@@ -363,7 +363,14 @@ export function CreateElectionForm() {
                         >
                           {!cand.previewUrl && initialsFor(cand.name)}
                         </div>
-                        <span style={{ fontWeight: 500 }}>{cand.name || 'Untitled candidate'}</span>
+                        <div>
+                          <div style={{ fontWeight: 500 }}>{cand.name || 'Untitled candidate'}</div>
+                          {cand.bio && (
+                            <div style={{ color: 'var(--ink-2)', fontSize: 13, lineHeight: 1.5, marginTop: 2 }}>
+                              {cand.bio}
+                            </div>
+                          )}
+                        </div>
                       </div>
                       <button type="button" className="edit-link" onClick={() => openEditCandidate(pos.id, cand.id)}>
                         Edit

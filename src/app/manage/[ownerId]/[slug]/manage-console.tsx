@@ -323,8 +323,8 @@ export function ManageConsole({
           </div>
           <div>
             {pos.candidates.map((cand, ci) => (
-              <div className="candidate-row" key={cand.id}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div className="candidate-row" key={cand.id} style={{ alignItems: 'flex-start' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
                   <div
                     className="avatar"
                     style={{
@@ -336,7 +336,14 @@ export function ManageConsole({
                   >
                     {!cand.photoUrl && initialsFor(cand.name)}
                   </div>
-                  <span style={{ fontWeight: 500 }}>{cand.name}</span>
+                  <div>
+                    <div style={{ fontWeight: 500 }}>{cand.name}</div>
+                    {cand.bio && (
+                      <div style={{ color: 'var(--ink-2)', fontSize: 13, lineHeight: 1.5, marginTop: 2 }}>
+                        {cand.bio}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <button type="button" className="edit-link" onClick={() => openCandidateModal(pos.id, cand.id)}>
                   Edit
