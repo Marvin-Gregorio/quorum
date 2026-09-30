@@ -37,12 +37,10 @@ function avatarShape(size: 'sm' | 'md'): string {
   return size === 'sm' ? 'w-9 h-9 rounded-full shrink-0' : 'w-12 h-12 rounded-full shrink-0';
 }
 
-// For the initials fallback (no photo) — a colored circle centering text.
 export function avatarClass(size: 'sm' | 'md'): string {
   return `${avatarShape(size)} flex items-center justify-center text-paper font-semibold ${size === 'sm' ? 'text-xs' : 'text-[15px]'}`;
 }
 
-// For an actual <img> once a photo URL exists.
 export function avatarImgClass(size: 'sm' | 'md'): string {
   return `${avatarShape(size)} object-cover`;
 }
