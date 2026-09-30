@@ -3,30 +3,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import { createBrowserSupabaseClient } from '@/lib/supabase/client';
-import { updateElectionSettingsAction, updateCandidateAction } from './actions';
-import { CandidatePhotoUpload } from './candidate-photo-upload';
+import { CandidateEditModal, type EditableCandidate } from './candidate-edit-modal';
+import { ElectionSettingsModal, type ElectionSettings } from './election-settings-modal';
 import { initialsFor, colorClassForIndex } from '@/lib/avatar';
 import { cn } from '@/lib/cn';
 import { toRoman } from '@/lib/roman';
 import { useLiveVoteTallies, type Tally } from '@/lib/hooks/use-live-vote-tallies';
-import {
-  STATUS_BADGE_BASE,
-  STATUS_BADGE_VARIANT,
-  MODAL_OVERLAY,
-  MODAL_PANEL,
-  MODAL_PANEL_WIDE,
-  FIELD_LABEL,
-  TEXT_INPUT,
-  RADIO_OPTION,
-  RADIO_CHOICE_CLASS,
-  CHIP,
-  CHIP_REMOVE_BTN,
-  CANDIDATE_ROW,
-  PRIMARY_BTN,
-  SECONDARY_BTN,
-  avatarClass,
-  avatarImgClass,
-} from '@/lib/ui-classes';
+import { STATUS_BADGE_BASE, STATUS_BADGE_VARIANT, CANDIDATE_ROW, avatarClass, avatarImgClass } from '@/lib/ui-classes';
 
 export type { Tally };
 
@@ -53,12 +36,6 @@ function formatDateTime(iso: string): string {
     dateStyle: 'medium',
     timeStyle: 'short',
   });
-}
-
-function toDatetimeLocal(iso: string): string {
-  const d = new Date(iso);
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 export function ManageConsole({
@@ -90,32 +67,21 @@ export function ManageConsole({
   initialTallies: Tally[];
   initialTurnout: Turnout[];
 }) {
-  const [organizationName, setOrganizationName] = useState(initialOrgName);
-  const [title, setTitle] = useState(initialTitle);
-  const [votingStartsAt, setVotingStartsAt] = useState(initialStartsAt);
-  const [votingEndsAt, setVotingEndsAt] = useState(initialEndsAt);
-  const [isPrivate, setIsPrivate] = useState(initialIsPrivate);
-  const [domains, setDomains] = useState(initialDomains);
+  const [settings, setSettings] = useState<ElectionSettings>({
+    organizationName: initialOrgName,
+    title: initialTitle,
+    votingStartsAt: initialStartsAt,
+    votingEndsAt: initialEndsAt,
+    isPrivate: initialIsPrivate,
+    domains: initialDomains,
+  });
   const [positions, setPositions] = useState(initialPositions);
 
   const tallies = useLiveVoteTallies({ pageId, positionIds, initialTallies, enabled: true });
   const [turnout, setTurnout] = useState(initialTurnout);
 
-  const [candidateModal, setCandidateModal] = useState<{ positionId: string; candidateId: string; name: string; bio: string; photoUrl: string | null } | null>(null);
-  const [candidateSaving, setCandidateSaving] = useState(false);
-  const [candidateError, setCandidateError] = useState<string | null>(null);
-
-  const [settingsModal, setSettingsModal] = useState<{
-    orgName: string;
-    title: string;
-    opens: string;
-    closes: string;
-    isPrivate: boolean;
-    domains: string[];
-    domainInput: string;
-  } | null>(null);
-  const [settingsSaving, setSettingsSaving] = useState(false);
-  const [settingsError, setSettingsError] = useState<string | null>(null);
+  const [editingCandidate, setEditingCandidate] = useState<EditableCandidate | null>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const [copiedLink, setCopiedLink] = useState<'ballot' | 'results' | null>(null);
 
@@ -163,95 +129,23 @@ export function ManageConsole({
   function openCandidateModal(positionId: string, candidateId: string) {
     const pos = positions.find((p) => p.id === positionId)!;
     const cand = pos.candidates.find((c) => c.id === candidateId)!;
-    setCandidateError(null);
-    setCandidateModal({ positionId, candidateId, name: cand.name, bio: cand.bio, photoUrl: cand.photoUrl });
+    setEditingCandidate({ positionId, candidateId, name: cand.name, bio: cand.bio, photoUrl: cand.photoUrl });
   }
 
-  async function saveCandidateModal() {
-    if (!candidateModal) return;
-    setCandidateSaving(true);
-    setCandidateError(null);
-    try {
-      const result = await updateCandidateAction(candidateModal.candidateId, {
-        name: candidateModal.name,
-        bio: candidateModal.bio,
-      });
-      if ('error' in result) {
-        setCandidateError(result.error);
-        return;
-      }
-      setPositions((prev) =>
-        prev.map((pos) =>
-          pos.id !== candidateModal.positionId
-            ? pos
-            : {
-                ...pos,
-                candidates: pos.candidates.map((c) =>
-                  c.id === candidateModal.candidateId
-                    ? { ...c, name: candidateModal.name, bio: candidateModal.bio, photoUrl: candidateModal.photoUrl }
-                    : c
-                ),
-              }
-        )
-      );
-      setCandidateModal(null);
-    } finally {
-      setCandidateSaving(false);
-    }
-  }
-
-  function openSettingsModal() {
-    setSettingsError(null);
-    setSettingsModal({
-      orgName: organizationName,
-      title,
-      opens: toDatetimeLocal(votingStartsAt),
-      closes: toDatetimeLocal(votingEndsAt),
-      isPrivate,
-      domains: [...domains],
-      domainInput: '',
-    });
-  }
-
-  async function saveSettingsModal() {
-    if (!settingsModal) return;
-    setSettingsSaving(true);
-    setSettingsError(null);
-    try {
-      const result = await updateElectionSettingsAction(pageId, {
-        organizationName: settingsModal.orgName,
-        title: settingsModal.title,
-        votingStartsAt: new Date(settingsModal.opens).toISOString(),
-        votingEndsAt: new Date(settingsModal.closes).toISOString(),
-        isPrivate: settingsModal.isPrivate,
-        domains: settingsModal.domains,
-      });
-      if ('error' in result) {
-        setSettingsError(result.error);
-        return;
-      }
-      setOrganizationName(settingsModal.orgName);
-      setTitle(settingsModal.title);
-      setVotingStartsAt(new Date(settingsModal.opens).toISOString());
-      setVotingEndsAt(new Date(settingsModal.closes).toISOString());
-      setIsPrivate(settingsModal.isPrivate);
-      setDomains(settingsModal.domains);
-      setSettingsModal(null);
-    } finally {
-      setSettingsSaving(false);
-    }
-  }
-
-  function addSettingsDomain() {
-    if (!settingsModal) return;
-    const value = settingsModal.domainInput.trim().toLowerCase();
-    if (!value || settingsModal.domains.includes(value)) return;
-    setSettingsModal({ ...settingsModal, domains: [...settingsModal.domains, value], domainInput: '' });
-  }
-
-  function removeSettingsDomain(domain: string) {
-    if (!settingsModal) return;
-    setSettingsModal({ ...settingsModal, domains: settingsModal.domains.filter((d) => d !== domain) });
+  function handleCandidateSaved(updated: EditableCandidate) {
+    setPositions((prev) =>
+      prev.map((pos) =>
+        pos.id !== updated.positionId
+          ? pos
+          : {
+              ...pos,
+              candidates: pos.candidates.map((c) =>
+                c.id === updated.candidateId ? { ...c, name: updated.name, bio: updated.bio, photoUrl: updated.photoUrl } : c
+              ),
+            }
+      )
+    );
+    setEditingCandidate(null);
   }
 
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
@@ -269,23 +163,23 @@ export function ManageConsole({
     }
   }
 
-  const privacyLabel = isPrivate ? `Private to ${domains.join(', ') || 'no domains yet'}` : 'Public';
+  const privacyLabel = settings.isPrivate ? `Private to ${settings.domains.join(', ') || 'no domains yet'}` : 'Public';
   const now = Date.now();
-  const opensAtMs = new Date(votingStartsAt).getTime();
-  const closesAtMs = new Date(votingEndsAt).getTime();
+  const opensAtMs = new Date(settings.votingStartsAt).getTime();
+  const closesAtMs = new Date(settings.votingEndsAt).getTime();
   const statusLine =
     now < opensAtMs
-      ? `Opens ${formatDateTime(votingStartsAt)}, closes ${formatDateTime(votingEndsAt)}.`
+      ? `Opens ${formatDateTime(settings.votingStartsAt)}, closes ${formatDateTime(settings.votingEndsAt)}.`
       : now > closesAtMs
-        ? `Closed. Voting ran from ${formatDateTime(votingStartsAt)} through ${formatDateTime(votingEndsAt)}.`
-        : `Open now, from ${formatDateTime(votingStartsAt)} through ${formatDateTime(votingEndsAt)}.`;
+        ? `Closed. Voting ran from ${formatDateTime(settings.votingStartsAt)} through ${formatDateTime(settings.votingEndsAt)}.`
+        : `Open now, from ${formatDateTime(settings.votingStartsAt)} through ${formatDateTime(settings.votingEndsAt)}.`;
 
   return (
     <div className="max-w-[900px] mx-auto w-full px-6 pt-6 pb-16 grow">
       <div className="flex justify-between items-start gap-4 flex-wrap">
         <div>
-          <p className="text-sm text-ink-2 m-0 mb-1">{organizationName}</p>
-          <h1 className="text-[clamp(26px,4vw,32px)] m-0 mb-2">{title}</h1>
+          <p className="text-sm text-ink-2 m-0 mb-1">{settings.organizationName}</p>
+          <h1 className="text-[clamp(26px,4vw,32px)] m-0 mb-2">{settings.title}</h1>
           <p className="text-ink-2 text-sm m-0">{statusLine}</p>
         </div>
         <div className="flex items-center gap-3">
@@ -293,7 +187,7 @@ export function ManageConsole({
           <button
             type="button"
             className="bg-transparent border border-ink rounded-[3px] px-4 py-2 text-sm cursor-pointer text-ink whitespace-nowrap"
-            onClick={openSettingsModal}
+            onClick={() => setSettingsOpen(true)}
           >
             Edit settings
           </button>
@@ -394,202 +288,25 @@ export function ManageConsole({
         </div>
       ))}
 
-      {candidateModal && (
-        <div className={MODAL_OVERLAY}>
-          <div role="dialog" aria-label="Edit candidate" className={MODAL_PANEL}>
-            <h2 className="text-xl mb-6">Edit candidate</h2>
-            {candidateError && (
-              <p role="alert" className="text-seal-dark text-sm mb-4">
-                {candidateError}
-              </p>
-            )}
-            <div className="flex items-center gap-4 mb-6">
-              {candidateModal.photoUrl ? (
-                <Image
-                  src={candidateModal.photoUrl}
-                  alt=""
-                  width={72}
-                  height={72}
-                  className="rounded-full object-cover shrink-0"
-                />
-              ) : (
-                <div className="w-[72px] h-[72px] rounded-full bg-line-strong flex items-center justify-center text-paper font-['Fraunces',serif] text-[22px] font-semibold shrink-0">
-                  {initialsFor(candidateModal.name)}
-                </div>
-              )}
-              <CandidatePhotoUpload
-                candidateId={candidateModal.candidateId}
-                pageId={pageId}
-                onUploaded={(url) => setCandidateModal({ ...candidateModal, photoUrl: url })}
-              />
-            </div>
-            <div className="mb-4">
-              <label className={FIELD_LABEL} htmlFor="cm-name">
-                Name
-              </label>
-              <input
-                className={TEXT_INPUT}
-                id="cm-name"
-                type="text"
-                value={candidateModal.name}
-                onChange={(e) => setCandidateModal({ ...candidateModal, name: e.target.value })}
-              />
-            </div>
-            <div className="mb-7">
-              <label className={FIELD_LABEL} htmlFor="cm-bio">
-                Platform statement
-              </label>
-              <textarea
-                className={TEXT_INPUT}
-                id="cm-bio"
-                rows={3}
-                value={candidateModal.bio}
-                onChange={(e) => setCandidateModal({ ...candidateModal, bio: e.target.value })}
-              />
-            </div>
-            <div className="flex justify-end gap-3">
-              <button type="button" className={SECONDARY_BTN} onClick={() => setCandidateModal(null)}>
-                Cancel
-              </button>
-              <button type="button" className={PRIMARY_BTN} onClick={saveCandidateModal} disabled={candidateSaving}>
-                {candidateSaving ? 'Saving…' : 'Save candidate'}
-              </button>
-            </div>
-          </div>
-        </div>
+      {editingCandidate && (
+        <CandidateEditModal
+          pageId={pageId}
+          initial={editingCandidate}
+          onClose={() => setEditingCandidate(null)}
+          onSaved={handleCandidateSaved}
+        />
       )}
 
-      {settingsModal && (
-        <div className={MODAL_OVERLAY}>
-          <div role="dialog" aria-label="Election settings" className={cn(MODAL_PANEL, MODAL_PANEL_WIDE)}>
-            <h2 className="text-xl mb-6">Election settings</h2>
-            {settingsError && (
-              <p role="alert" className="text-seal-dark text-sm mb-4">
-                {settingsError}
-              </p>
-            )}
-            <div className="mb-5">
-              <label className={FIELD_LABEL} htmlFor="sm-org">
-                Organization name
-              </label>
-              <input
-                className={TEXT_INPUT}
-                id="sm-org"
-                type="text"
-                value={settingsModal.orgName}
-                onChange={(e) => setSettingsModal({ ...settingsModal, orgName: e.target.value })}
-              />
-            </div>
-            <div className="mb-5">
-              <label className={FIELD_LABEL} htmlFor="sm-title">
-                Election title
-              </label>
-              <input
-                className={TEXT_INPUT}
-                id="sm-title"
-                type="text"
-                value={settingsModal.title}
-                onChange={(e) => setSettingsModal({ ...settingsModal, title: e.target.value })}
-              />
-            </div>
-            <div className="flex gap-4 flex-wrap mb-6">
-              <div className="flex-[1_1_200px]">
-                <label className={FIELD_LABEL} htmlFor="sm-opens">
-                  Opens
-                </label>
-                <input
-                  className={TEXT_INPUT}
-                  id="sm-opens"
-                  type="datetime-local"
-                  value={settingsModal.opens}
-                  onChange={(e) => setSettingsModal({ ...settingsModal, opens: e.target.value })}
-                />
-              </div>
-              <div className="flex-[1_1_200px]">
-                <label className={FIELD_LABEL} htmlFor="sm-closes">
-                  Closes
-                </label>
-                <input
-                  className={TEXT_INPUT}
-                  id="sm-closes"
-                  type="datetime-local"
-                  value={settingsModal.closes}
-                  onChange={(e) => setSettingsModal({ ...settingsModal, closes: e.target.value })}
-                />
-              </div>
-            </div>
-
-            <fieldset className="mb-3">
-              <legend>Who can vote</legend>
-              <label className={RADIO_OPTION}>
-                <input
-                  type="radio"
-                  name="sm-visibility"
-                  className={RADIO_CHOICE_CLASS}
-                  checked={!settingsModal.isPrivate}
-                  onChange={() => setSettingsModal({ ...settingsModal, isPrivate: false })}
-                />
-                <span>Anyone with a Google or Microsoft account</span>
-              </label>
-              <label className={RADIO_OPTION}>
-                <input
-                  type="radio"
-                  name="sm-visibility"
-                  className={RADIO_CHOICE_CLASS}
-                  checked={settingsModal.isPrivate}
-                  onChange={() => setSettingsModal({ ...settingsModal, isPrivate: true })}
-                />
-                <span>Only people with a specific email domain</span>
-              </label>
-            </fieldset>
-
-            {settingsModal.isPrivate && (
-              <div className="mb-7 pl-7">
-                <div className="flex gap-2 flex-wrap items-center mb-3">
-                  {settingsModal.domains.map((domain) => (
-                    <span className={CHIP} key={domain}>
-                      {domain}
-                      <button type="button" className={CHIP_REMOVE_BTN} onClick={() => removeSettingsDomain(domain)} aria-label={`Remove ${domain}`}>
-                        &times;
-                      </button>
-                    </span>
-                  ))}
-                </div>
-                <div className="flex gap-2">
-                  <input
-                    className={TEXT_INPUT}
-                    type="text"
-                    placeholder="Add a domain, e.g. riverside.coop"
-                    value={settingsModal.domainInput}
-                    onChange={(e) => setSettingsModal({ ...settingsModal, domainInput: e.target.value })}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        addSettingsDomain();
-                      }
-                    }}
-                  />
-                  <button
-                    type="button"
-                    onClick={addSettingsDomain}
-                    className="border border-ink bg-transparent rounded-[3px] px-[18px] py-0 text-sm cursor-pointer whitespace-nowrap"
-                  >
-                    Add
-                  </button>
-                </div>
-              </div>
-            )}
-
-            <div className="flex justify-end gap-3">
-              <button type="button" className={SECONDARY_BTN} onClick={() => setSettingsModal(null)}>
-                Cancel
-              </button>
-              <button type="button" className={PRIMARY_BTN} onClick={saveSettingsModal} disabled={settingsSaving}>
-                {settingsSaving ? 'Saving…' : 'Save changes'}
-              </button>
-            </div>
-          </div>
-        </div>
+      {settingsOpen && (
+        <ElectionSettingsModal
+          pageId={pageId}
+          initial={settings}
+          onClose={() => setSettingsOpen(false)}
+          onSaved={(updated) => {
+            setSettings(updated);
+            setSettingsOpen(false);
+          }}
+        />
       )}
     </div>
   );

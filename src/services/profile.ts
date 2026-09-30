@@ -1,5 +1,11 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/lib/supabase/types';
+import type { Page } from '@/types/models';
+
+type ManagedPageSummaryRow = Pick<
+  Page,
+  'id' | 'slug' | 'title' | 'organization_name' | 'voting_starts_at' | 'voting_ends_at'
+>;
 
 export interface ManagedElectionSummary {
   id: string;
@@ -25,8 +31,9 @@ export async function getManagedElections(
     .select('id, slug, title, organization_name, voting_starts_at, voting_ends_at')
     .eq('owner_id', userId)
     .order('created_at', { ascending: false });
+  const pages = (data ?? []) as ManagedPageSummaryRow[];
 
-  return (data ?? []).map((page: any) => ({
+  return pages.map((page) => ({
     id: page.id,
     slug: page.slug,
     title: page.title,

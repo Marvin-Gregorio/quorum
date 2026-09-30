@@ -7,30 +7,14 @@ import { createElectionAction } from './actions';
 import { createBrowserSupabaseClient } from '@/lib/supabase/client';
 import { compressCandidatePhoto } from '@/lib/image-compression';
 import { updateCandidatePhotoAction } from '@/app/manage/[ownerId]/[slug]/actions';
-import { initialsFor, colorClassForIndex } from '@/lib/avatar';
+import { colorClassForIndex } from '@/lib/avatar';
 import { cn } from '@/lib/cn';
-import {
-  BREADCRUMB_LIST,
-  BREADCRUMB_LINK,
-  TEXT_INPUT,
-  FIELD_LABEL,
-  RADIO_OPTION,
-  RADIO_CHOICE_CLASS,
-  CHIP,
-  CHIP_REMOVE_BTN,
-  CANDIDATE_ROW,
-  MODAL_OVERLAY,
-  MODAL_PANEL,
-  PRIMARY_BTN,
-  SECONDARY_BTN,
-  avatarClass,
-  avatarImgClass,
-} from '@/lib/ui-classes';
-import Image from 'next/image';
+import { CandidateModal, type CandidateDraft } from './candidate-modal';
+import { PositionsEditor, type EditablePosition } from './positions-editor';
+import { BREADCRUMB_LIST, BREADCRUMB_LINK, TEXT_INPUT, FIELD_LABEL, RADIO_OPTION, RADIO_CHOICE_CLASS, CHIP, CHIP_REMOVE_BTN, PRIMARY_BTN } from '@/lib/ui-classes';
 
 type Candidate = { id: string; name: string; bio: string; photoFile: File | null; previewUrl: string | null };
 type Position = { id: string; title: string; candidates: Candidate[] };
-type Modal = { positionId: string; candidateId: string | null; name: string; bio: string; colorClass: string; photoFile: File | null; previewUrl: string | null };
 
 let nextId = 1;
 function newLocalId() {
@@ -47,7 +31,7 @@ export function CreateElectionForm() {
   const [domains, setDomains] = useState<string[]>([]);
   const [domainInput, setDomainInput] = useState('');
   const [positions, setPositions] = useState<Position[]>([]);
-  const [modal, setModal] = useState<Modal | null>(null);
+  const [modalFor, setModalFor] = useState<{ positionId: string; candidateId: string | null } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -74,76 +58,33 @@ export function CreateElectionForm() {
     setPositions(positions.filter((p) => p.id !== positionId));
   }
 
-  function openAddCandidate(positionId: string) {
-    const pos = positions.find((p) => p.id === positionId)!;
-    setModal({
-      positionId,
-      candidateId: null,
-      name: '',
-      bio: '',
-      colorClass: colorClassForIndex(pos.candidates.length),
-      photoFile: null,
-      previewUrl: null,
-    });
-  }
-
-  function openEditCandidate(positionId: string, candidateId: string) {
-    const pos = positions.find((p) => p.id === positionId)!;
-    const cand = pos.candidates.find((c) => c.id === candidateId)!;
-    setModal({
-      positionId,
-      candidateId,
-      name: cand.name,
-      bio: cand.bio,
-      colorClass: colorClassForIndex(pos.candidates.findIndex((c) => c.id === candidateId)),
-      photoFile: cand.photoFile,
-      previewUrl: cand.previewUrl,
-    });
-  }
-
-  function closeModal() {
-    setModal(null);
-  }
-
-  function onModalPhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file || !modal) return;
-    const previewUrl = URL.createObjectURL(file);
-    setModal({ ...modal, photoFile: file, previewUrl });
-  }
-
-  function saveCandidate() {
-    if (!modal) return;
-    const { positionId, candidateId, name, bio, photoFile, previewUrl } = modal;
+  function saveCandidate(draft: CandidateDraft) {
+    if (!modalFor) return;
+    const { positionId, candidateId } = modalFor;
     setPositions(
       positions.map((pos) => {
         if (pos.id !== positionId) return pos;
         if (candidateId) {
           return {
             ...pos,
-            candidates: pos.candidates.map((c) =>
-              c.id === candidateId ? { ...c, name, bio, photoFile, previewUrl } : c
-            ),
+            candidates: pos.candidates.map((c) => (c.id === candidateId ? { ...c, ...draft } : c)),
           };
         }
-        return {
-          ...pos,
-          candidates: [...pos.candidates, { id: newLocalId(), name, bio, photoFile, previewUrl }],
-        };
+        return { ...pos, candidates: [...pos.candidates, { id: newLocalId(), ...draft }] };
       })
     );
-    setModal(null);
+    setModalFor(null);
   }
 
   function deleteCandidateFromModal() {
-    if (!modal) return;
-    const { positionId, candidateId } = modal;
+    if (!modalFor) return;
+    const { positionId, candidateId } = modalFor;
     setPositions(
       positions.map((pos) =>
         pos.id === positionId ? { ...pos, candidates: pos.candidates.filter((c) => c.id !== candidateId) } : pos
       )
     );
-    setModal(null);
+    setModalFor(null);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -199,6 +140,19 @@ export function CreateElectionForm() {
       setSubmitting(false);
     }
   }
+
+  const editablePositions: EditablePosition[] = positions.map((p) => ({
+    id: p.id,
+    title: p.title,
+    candidates: p.candidates.map((c) => ({ id: c.id, name: c.name, bio: c.bio, previewUrl: c.previewUrl })),
+  }));
+
+  const modalCandidate = modalFor
+    ? positions.find((p) => p.id === modalFor.positionId)?.candidates.find((c) => c.id === modalFor.candidateId)
+    : undefined;
+  const modalPositionCandidateCount = modalFor
+    ? (positions.find((p) => p.id === modalFor.positionId)?.candidates.length ?? 0)
+    : 0;
 
   return (
     <>
@@ -330,86 +284,14 @@ export function CreateElectionForm() {
           )}
         </div>
 
-        <div className="border-t border-line mt-8 pt-8">
-          <h2 className="text-xl mb-1">Positions &amp; candidates</h2>
-          <p className="text-[13px] text-ink-2 m-0 mb-5">
-            Deleting a position also deletes its candidates.
-          </p>
-
-          {positions.map((pos) => (
-            <div className="border-t border-line pt-7 mt-7" key={pos.id}>
-              <div className="flex justify-between items-end gap-4 mb-4">
-                <div className="grow">
-                  <label className={FIELD_LABEL}>Position title</label>
-                  <input
-                    className={TEXT_INPUT}
-                    type="text"
-                    value={pos.title}
-                    onChange={(e) => updatePositionTitle(pos.id, e.target.value)}
-                  />
-                </div>
-                <button
-                  type="button"
-                  className="bg-transparent border-none text-seal-dark text-[13px] cursor-pointer underline underline-offset-2 whitespace-nowrap pb-[11px]"
-                  onClick={() => deletePosition(pos.id)}
-                >
-                  Delete position
-                </button>
-              </div>
-
-              {pos.candidates.length > 0 ? (
-                <div>
-                  {pos.candidates.map((cand, ci) => (
-                    <div className={cn(CANDIDATE_ROW, 'items-start')} key={cand.id}>
-                      <div className="flex items-start gap-3.5">
-                        {cand.previewUrl ? (
-                          <Image src={cand.previewUrl} alt={'candidate profile pic'} className={avatarImgClass('sm')}/>
-                        ) : (
-                          <div className={cn(avatarClass('sm'), colorClassForIndex(ci))}>
-                            {initialsFor(cand.name)}
-                          </div>
-                        )}
-                        <div>
-                          <div className="font-medium">{cand.name || 'Untitled candidate'}</div>
-                          {cand.bio && (
-                            <div className="text-ink-2 text-[13px] leading-[1.5] mt-0.5">
-                              {cand.bio}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        className="bg-transparent border-none text-sm text-ink-2 cursor-pointer underline underline-offset-2"
-                        onClick={() => openEditCandidate(pos.id, cand.id)}
-                      >
-                        Edit
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-ink-2 py-4 border-t border-line">No candidates yet.</p>
-              )}
-
-              <button
-                type="button"
-                className="bg-transparent border border-dashed border-line-strong rounded-[3px] px-5 py-3 text-sm text-ink-2 cursor-pointer w-full text-left mt-3"
-                onClick={() => openAddCandidate(pos.id)}
-              >
-                + Add a candidate
-              </button>
-            </div>
-          ))}
-
-          <button
-            type="button"
-            className="bg-transparent border border-solid border-line-strong rounded-[3px] px-5 py-3 text-sm text-ink cursor-pointer w-full text-left mt-5"
-            onClick={addPosition}
-          >
-            + Add a position
-          </button>
-        </div>
+        <PositionsEditor
+          positions={editablePositions}
+          onTitleChange={updatePositionTitle}
+          onDeletePosition={deletePosition}
+          onAddPosition={addPosition}
+          onOpenAddCandidate={(positionId) => setModalFor({ positionId, candidateId: null })}
+          onOpenEditCandidate={(positionId, candidateId) => setModalFor({ positionId, candidateId })}
+        />
 
         <div className="border-t border-line mt-8 pt-8 flex justify-end">
           <button type="submit" className={cn(PRIMARY_BTN, 'px-8 py-[14px] text-base')} disabled={submitting}>
@@ -418,83 +300,24 @@ export function CreateElectionForm() {
         </div>
       </form>
 
-      {modal && (
-        <div className={MODAL_OVERLAY}>
-          <div role="dialog" aria-label="Candidate" className={MODAL_PANEL}>
-            <h2 className="text-xl mb-6">{modal.candidateId ? 'Edit candidate' : 'Add a candidate'}</h2>
-
-            <div className="flex items-center gap-4 mb-6">
-              {modal.previewUrl ? (
-                <Image src={modal.previewUrl} alt={'candidate profile pic'} className="w-[72px] h-[72px] rounded-full object-cover shrink-0"/>
-              ) : (
-                <div
-                  className={cn(
-                    'w-[72px] h-[72px] rounded-full flex items-center justify-center text-paper font-[\'Fraunces\',serif] text-[22px] font-semibold shrink-0',
-                    modal.colorClass
-                  )}
-                >
-                  {initialsFor(modal.name)}
-                </div>
-              )}
-              <div>
-                <label className="inline-block border border-ink bg-transparent rounded-[3px] px-4 py-2 text-sm cursor-pointer text-ink">
-                  Upload photo
-                  <input className="sr-only" type="file" accept="image/*" onChange={onModalPhotoChange} />
-                </label>
-                <p className="text-xs text-ink-2 mt-2 mb-0 leading-[1.5] max-w-[26ch]">
-                  Resized and compressed automatically before upload.
-                </p>
-              </div>
-            </div>
-
-            <div className="mb-4">
-              <label className={FIELD_LABEL} htmlFor="m-name">
-                Name
-              </label>
-              <input
-                className={TEXT_INPUT}
-                id="m-name"
-                type="text"
-                value={modal.name}
-                onChange={(e) => setModal({ ...modal, name: e.target.value })}
-              />
-            </div>
-            <div className="mb-7">
-              <label className={FIELD_LABEL} htmlFor="m-bio">
-                Platform statement
-              </label>
-              <textarea
-                className={TEXT_INPUT}
-                id="m-bio"
-                rows={3}
-                value={modal.bio}
-                onChange={(e) => setModal({ ...modal, bio: e.target.value })}
-              />
-            </div>
-
-            <div className="flex justify-between items-center">
-              {modal.candidateId ? (
-                <button
-                  type="button"
-                  onClick={deleteCandidateFromModal}
-                  className="bg-transparent border-none text-seal-dark text-sm cursor-pointer underline underline-offset-2"
-                >
-                  Delete candidate
-                </button>
-              ) : (
-                <span />
-              )}
-              <div className="flex gap-3">
-                <button type="button" className={SECONDARY_BTN} onClick={closeModal}>
-                  Cancel
-                </button>
-                <button type="button" className={PRIMARY_BTN} onClick={saveCandidate}>
-                  Save candidate
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+      {modalFor && (
+        <CandidateModal
+          isEditing={modalFor.candidateId !== null}
+          colorClass={colorClassForIndex(
+            modalFor.candidateId
+              ? (positions.find((p) => p.id === modalFor.positionId)?.candidates.findIndex((c) => c.id === modalFor.candidateId) ?? 0)
+              : modalPositionCandidateCount
+          )}
+          initial={{
+            name: modalCandidate?.name ?? '',
+            bio: modalCandidate?.bio ?? '',
+            photoFile: modalCandidate?.photoFile ?? null,
+            previewUrl: modalCandidate?.previewUrl ?? null,
+          }}
+          onSave={saveCandidate}
+          onDelete={deleteCandidateFromModal}
+          onClose={() => setModalFor(null)}
+        />
       )}
     </>
   );

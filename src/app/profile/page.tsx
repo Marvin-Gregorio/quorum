@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { getManagedElections } from '@/lib/queries/profile';
+import { getManagedElections } from '@/services/profile';
 import { UserMenu } from '@/components/user-menu';
 import { initialsFor } from '@/lib/avatar';
 import { BREADCRUMB_LIST, BREADCRUMB_LINK, PRIMARY_BTN, STATUS_BADGE_BASE, STATUS_BADGE_VARIANT } from '@/lib/ui-classes';

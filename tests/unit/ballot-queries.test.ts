@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getBallot } from '@/lib/queries/ballot';
+import { getBallot } from '@/services/ballot';
 
 describe('getBallot', () => {
   it('marks the voter\'s prior choice as selected', async () => {

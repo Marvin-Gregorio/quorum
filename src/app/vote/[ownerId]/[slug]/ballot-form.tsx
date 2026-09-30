@@ -7,7 +7,7 @@ import { initialsFor, colorClassForIndex } from '@/lib/avatar';
 import { cn } from '@/lib/cn';
 import { toRoman } from '@/lib/roman';
 import { PRIMARY_BTN, avatarClass, avatarImgClass } from '@/lib/ui-classes';
-import type { Ballot } from '@/lib/queries/ballot';
+import type { Ballot } from '@/services/ballot';
 
 const RADIO_BUBBLE_CLASS =
   'appearance-none w-[22px] h-[22px] rounded-full border-2 border-ink-2 mt-0.5 shrink-0 cursor-pointer bg-paper ' +

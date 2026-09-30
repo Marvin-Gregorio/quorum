@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { checkPageAccess } from '@/lib/access';
-import { getResultsSnapshot } from '@/lib/queries/results';
+import { getResultsSnapshot } from '@/services/results';
 
 export async function GET(request: Request, { params }: { params: Promise<{ ownerId: string; slug: string }> }) {
   const { ownerId, slug } = await params;
