@@ -39,6 +39,56 @@ details.
   every ~5–8s. This keeps Realtime connections bounded to active managers,
   not public viewership, which is the resource with a hard free-tier ceiling.
 
+## Styling & UI conventions
+
+- **Tailwind CSS v4 utility classes only — no hand-written custom CSS
+  classes.** Every element is styled with Tailwind classes directly in JSX.
+  The only non-utility CSS allowed is in `src/app/globals.css`: a `@theme`
+  block declaring design tokens (`--color-paper`, `--color-ink`, etc., using
+  the `--color-*` prefix so Tailwind auto-generates matching `bg-*`/`text-*`/
+  `border-*` utilities) and a minimal `@layer base` for true page-wide resets
+  (box-sizing, body/heading font, the focus-visible ring, reduced-motion) —
+  never component-specific styling.
+- **Reused class strings live in `src/lib/ui-classes.ts`, not as CSS
+  classes.** When the same Tailwind utility string is needed in 2+ files
+  (buttons, form inputs, modals, avatars, etc.), export it as a named
+  constant (or small function, e.g. `avatarClass(size)`) from that module and
+  import it. A string only used in one file can stay inlined there.
+- **Compose classes with `cn()` (`src/lib/cn.ts`, clsx + tailwind-merge),
+  never by concatenating strings.** Once everything is a plain Tailwind
+  utility class, two classes that target the same CSS property (e.g.
+  `items-center` and `items-start`) don't resolve by source order — only
+  `tailwind-merge` reliably picks the intended one. Use `cn(base, override)`
+  for every base-class-plus-conditional-override composition, however small.
+- **Avoid inline `style` — it should only appear for a value with no finite
+  set of Tailwind classes** (e.g. a computed 0–100% bar width from live vote
+  counts). Tailwind's JIT compiler only generates CSS for literal class
+  strings it can see in source, so a truly dynamic/continuous value has no
+  other option. For a dynamic *image*, render a real `<img>` or `next/image`
+  with `src={url}` instead of setting `backgroundImage` via `style` — that
+  isn't a styling concern at all once it's just a prop.
+- **`next/image` needs every remote host listed in `next.config.ts`'s
+  `images.remotePatterns`** (already configured for Supabase Storage:
+  `*.supabase.co` in production, `127.0.0.1:54321`/`localhost:54321` for the
+  local Supabase CLI, with `dangerouslyAllowLocalIP` scoped to non-production
+  since Next's SSRF guard otherwise blocks private-IP fetches). A client-only
+  `blob:` object-URL preview (e.g. a photo picked but not yet uploaded) can't
+  be optimized server-side — leave those as a plain `<img>` with a one-line
+  `eslint-disable-next-line @next/next/no-img-element` explaining why.
+- **Tailwind v4 mechanics this codebase relies on** — reach for these instead
+  of writing custom CSS: `has-checked:` / `group-has-checked:` for styling
+  that depends on a sibling or descendant's `:checked` state (e.g. a
+  ballot-row highlighting when its radio is selected); `appearance-none` +
+  `checked:` + an arbitrary `shadow-[inset_...]` for custom radio/checkbox
+  circles; arbitrary-value brackets use `_` (underscore) not `,` (comma) to
+  represent a space, e.g. `grid-cols-[8px_8px]`.
+- **Comments: only document a non-obvious "why," never restate the code.**
+  A comment earns its place by explaining a hidden constraint, an invariant,
+  a workaround for a specific library/DB quirk, or a business rule a reader
+  couldn't otherwise infer (this file's own Business rules section is exactly
+  that kind of thing) — not by describing what a well-named
+  function/variable/class-string already makes obvious.
+
 ## Business rules
 
 ### Ownership & roles
