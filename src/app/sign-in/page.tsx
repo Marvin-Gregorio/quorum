@@ -12,7 +12,14 @@ export default function SignInPage() {
     // them back to it instead of always landing on /profile.
     const next = new URLSearchParams(window.location.search).get('next');
     const callbackUrl = new URL('/auth/callback', window.location.origin);
-    if (next) callbackUrl.searchParams.set('next', next);
+    if (next) {
+      callbackUrl.searchParams.set('next', next);
+      // Backs up the query-param round trip above: OAuth providers and the
+      // Supabase redirect-URL allow-list are the fussier path for
+      // preserving query strings end-to-end, so also stash the destination
+      // in a short-lived cookie the callback route can fall back to.
+      document.cookie = `post_auth_redirect=${encodeURIComponent(next)}; path=/; max-age=600; samesite=lax`;
+    }
 
     await supabase.auth.signInWithOAuth({
       provider,

@@ -81,6 +81,14 @@ export interface Database {
         Args: { p_page_id: string; p_email: string };
         Returns: boolean;
       };
+      find_page_by_owner_slug: {
+        Args: { p_owner_id: string; p_slug: string };
+        Returns: { page_id: string; is_private: boolean }[];
+      };
+      get_page_privacy: {
+        Args: { p_page_id: string };
+        Returns: boolean;
+      };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

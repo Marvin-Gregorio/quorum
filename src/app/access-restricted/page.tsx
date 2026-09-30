@@ -2,20 +2,30 @@ import Link from 'next/link';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { UserMenu } from '@/components/user-menu';
 
+// Only a same-origin relative path is a safe redirect target — see
+// auth/callback/route.ts's isSafeNextPath for the same rule and rationale.
+function isSafeNextPath(next: string | undefined): next is string {
+  return !!next && next.startsWith('/') && !next.startsWith('//');
+}
+
 export default async function AccessRestrictedPage({
   searchParams,
 }: {
-  searchParams: Promise<{ pageId?: string }>;
+  searchParams: Promise<{ pageId?: string; next?: string }>;
 }) {
-  const { pageId } = await searchParams;
+  const { pageId, next } = await searchParams;
   const supabase = await createServerSupabaseClient();
   const { data: userData } = await supabase.auth.getUser();
 
   let heading = 'You do not have access to this election.';
   if (pageId) {
-    const { data: page } = await supabase.from('pages').select('id, is_private').eq('id', pageId).maybeSingle();
-    if (page?.is_private) {
-      const { data: domainRows } = await supabase.from('allowed_domains').select('domain').eq('page_id', page.id);
+    // A rejected visitor is, by definition, someone the "pages" select policy
+    // hides this row from — a plain RLS-gated lookup would come back null
+    // here every time, so this reliably needs to bypass RLS just to learn
+    // is_private (nothing else).
+    const { data: isPrivate } = await supabase.rpc('get_page_privacy', { p_page_id: pageId });
+    if (isPrivate) {
+      const { data: domainRows } = await supabase.from('allowed_domains').select('domain').eq('page_id', pageId);
       const domainList = (domainRows ?? []).map((d) => d.domain);
       heading = domainList.length
         ? `This election is only open to ${domainList.join(', ')}`
@@ -87,7 +97,11 @@ export default async function AccessRestrictedPage({
           </p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'center' }}>
-            <Link href="/sign-in" className="primary-btn" style={{ padding: '14px 28px', fontSize: 15 }}>
+            <Link
+              href={isSafeNextPath(next) ? `/sign-in?next=${encodeURIComponent(next)}` : '/sign-in'}
+              className="primary-btn"
+              style={{ padding: '14px 28px', fontSize: 15 }}
+            >
               Sign in with a different account
             </Link>
             <Link href="/" style={{ fontSize: 14, textDecoration: 'underline', textUnderlineOffset: 3 }}>
