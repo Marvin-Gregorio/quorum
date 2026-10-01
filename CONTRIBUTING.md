@@ -31,11 +31,30 @@ This repo uses the standard GitHub fork-and-pull-request model:
    npm run build
    ```
 
-5. Push to your fork and open a pull request against `main` on this repo.
+5. If your change is user-facing, add a changeset describing it:
+
+   ```bash
+   npx changeset
+   ```
+
+   This prompts for a bump type (patch/minor/major) and a short summary,
+   then writes a small file under `.changeset/` — commit it as part of your
+   PR. Skip this for changes with no user-facing effect (docs, internal
+   refactors, CI config, etc.).
+
+6. Push to your fork and open a pull request against `main` on this repo.
    Describe what changed and why; link any related issue.
 
 PRs are expected to pass CI ([.github/workflows/ci.yml](.github/workflows/ci.yml))
 before being merged.
+
+## Releases
+
+Releases are on-demand, not automatic. A bot keeps a "Version Packages" PR
+up to date on `main` as changesets land; when a maintainer merges it, a git
+tag and GitHub Release are created automatically
+([.github/workflows/release.yml](.github/workflows/release.yml)). You don't
+need to do anything beyond adding a changeset to your own PR.
 
 ## Reporting bugs / requesting features
 

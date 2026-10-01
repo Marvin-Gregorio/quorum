@@ -1,0 +1,50 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+
+jobs:
+  # changesets/action runs one of two phases depending on repo state:
+  #  - "version": changesets are pending on `main` -> opens/updates the
+  #    "Version Packages" PR (via `version-script`).
+  #  - "publish": no changesets are pending -> runs `publish-script`, i.e.
+  #    exactly the push that happens right after merging that PR.
+  #
+  # This package is `private: true` and never npm-published, but it's still
+  # reachable in "publish" mode: `.changeset/config.json` sets
+  # `privatePackages: { version: true, tag: true }`, which makes
+  # `changeset publish-plan` list it as a "tag-only" entry instead of
+  # excluding it outright (verified directly: without that config,
+  # `publish-plan` returns an empty plan and this job would silently never
+  # reach "publish" mode at all). `changeset publish`'s own CLI logic skips
+  # any real npm-publish attempt for "tag-only" entries and just tags them
+  # (verified by reading its source) - so it's safe to use as `publish-script`
+  # here with no npm credentials and no risk of trying to publish anywhere.
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - uses: changesets/action@v2.1.2
+        with:
+          version-script: npm run version-packages
+          publish-script: npx changeset publish
+          create-github-releases: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

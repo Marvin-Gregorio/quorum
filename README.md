@@ -105,3 +105,12 @@ npm run build
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the full contribution process.
+
+## Releases
+
+Versioning is managed with [Changesets](https://github.com/changesets/changesets)
+and is on-demand, not automatic: a bot keeps a "Version Packages" PR up to
+date on `main` as changesets accumulate, and merging that PR is the one
+manual step that cuts a release — a git tag and GitHub Release are then
+created automatically
+([.github/workflows/release.yml](.github/workflows/release.yml)).

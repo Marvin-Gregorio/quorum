@@ -13,7 +13,9 @@
     "db:types": "supabase gen types typescript --local > src/types/database.ts",
     "test:unit": "vitest run tests/unit",
     "test:rls": "vitest run tests/rls",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "changeset": "changeset",
+    "version-packages": "changeset version"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
@@ -28,6 +30,7 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@changesets/cli": "^3.0.3",
     "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.9.1",
