@@ -3,6 +3,7 @@
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { pageSettingsSchema, positionSchema, candidateSchema } from '@/lib/validation';
 import { createElection, type CreateElectionInput, type CreatedElection } from '@/services/manage';
+import { createElectionRateLimit } from '@/lib/rate-limit';
 
 export type { CreateElectionInput, CreatedElection };
 
@@ -32,6 +33,9 @@ export async function createElectionAction(
   if (!userData.user) {
     return { error: 'You must be signed in to create an election.' };
   }
+
+  const { success } = await createElectionRateLimit.limit(userData.user.id);
+  if (!success) return { error: 'Too many elections created recently. Please try again later.' };
 
   return createElection(supabase, userData.user.id, input);
 }

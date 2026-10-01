@@ -2,8 +2,16 @@ import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { checkPageAccess } from '@/lib/access';
 import { getResultsSnapshot } from '@/services/results';
+import { resultsPollRateLimit } from '@/lib/rate-limit';
 
 export async function GET(request: Request, { params }: { params: Promise<{ ownerId: string; slug: string }> }) {
+  // Public and unauthenticated-reachable, so there's no user to key on —
+  // rate limit by IP instead. A backstop, not the primary defense: the
+  // cache headers below already absorb most repeated polling on their own.
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? 'unknown';
+  const { success } = await resultsPollRateLimit.limit(ip);
+  if (!success) return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+
   const { ownerId, slug } = await params;
   const supabase = await createServerSupabaseClient();
 

@@ -240,5 +240,11 @@ details.
 - Automated tie-breaking, ranked-choice, or multi-select voting methods.
 - CSV/export of results or turnout data.
 - Email/SMS reminders or notifications to non-voters.
-- Rate-limiting or bot/abuse detection beyond OAuth-based vote uniqueness.
+- Comprehensive bot/abuse detection (CAPTCHA, device fingerprinting, IP
+  reputation). Basic per-action rate limits do exist (via Upstash Redis,
+  see `src/lib/rate-limit.ts`) for the three highest-risk actions — election
+  creation, voting, and public results polling — targeted at the one real
+  shared-resource-exhaustion risk (unlimited page creation against the
+  shared free-tier Supabase project), not a general request-throttling
+  policy.
 - Internationalization.
