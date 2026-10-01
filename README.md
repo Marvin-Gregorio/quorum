@@ -80,6 +80,12 @@ usage, etc.) — read it before opening a PR.
 
    Open [http://localhost:3000](http://localhost:3000).
 
+Rate limiting on election creation, voting, and public results polling uses
+[Upstash Redis](https://upstash.com) — optional for local development
+(it no-ops without credentials) but required in production. Set
+`UPSTASH_REDIS_REST_URL`/`UPSTASH_REDIS_REST_TOKEN` in `.env.local` if you
+want to exercise it locally.
+
 ## Tests
 
 - `npm run test:unit` — unit tests (`tests/unit`), no external services
