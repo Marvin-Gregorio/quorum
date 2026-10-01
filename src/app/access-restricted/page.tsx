@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { UserMenu } from '@/components/user-menu';
+import { Header } from '@/components/header';
 import { PRIMARY_BTN } from '@/lib/ui-classes';
 import { cn } from '@/lib/cn';
 
@@ -36,13 +36,8 @@ export default async function AccessRestrictedPage({
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="flex justify-between items-center p-[clamp(24px,5vw,64px)] py-7">
-        <div className="font-['Fraunces',serif] italic font-semibold text-[22px]">
-          Quorum
-        </div>
-        {userData.user && <UserMenu name={null} email={userData.user.email ?? null} />}
-      </header>
+    <>
+      <Header />
 
       <div className="grow flex items-center justify-center p-6">
         <div className="w-full max-w-[420px] text-center">
@@ -80,7 +75,7 @@ export default async function AccessRestrictedPage({
               opacity="0.85"
               transform="rotate(-10 60 76)"
             >
-              Quorum
+              {process.env.NEXT_PUBLIC_NAME}
             </text>
           </svg>
 
@@ -104,6 +99,6 @@ export default async function AccessRestrictedPage({
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

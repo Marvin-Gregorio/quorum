@@ -1,7 +1,7 @@
 'use server';
 
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { pageSettingsSchema, candidateSchema, positionSchema } from '@/lib/validation';
+import { pageSettingsSchema, candidateSchema, positionSchema, candidatePhotoUrlSchema } from '@/lib/validation';
 import * as manageService from '@/services/manage';
 import type { PageSettingsInput } from '@/services/manage';
 
@@ -27,8 +27,11 @@ export async function updateCandidatePhotoAction(
   candidateId: string,
   photoUrl: string
 ): Promise<{ ok: true } | { error: string }> {
+  const result = candidatePhotoUrlSchema.safeParse(photoUrl);
+  if (!result.success) return { error: result.error.issues[0].message };
+
   const supabase = await createServerSupabaseClient();
-  return manageService.updateCandidatePhoto(supabase, candidateId, photoUrl);
+  return manageService.updateCandidatePhoto(supabase, candidateId, result.data);
 }
 
 export async function createCandidateAction(

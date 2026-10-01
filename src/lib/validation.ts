@@ -27,3 +27,16 @@ export const voteSchema = z.object({
   positionId: z.string().uuid(),
   candidateId: z.string().uuid(),
 });
+
+// Candidate photos are uploaded directly from the browser to the
+// candidate-photos Storage bucket (see AGENTS.md media rules), so the only
+// thing a Server Action can validate is that the resulting URL actually
+// points into that bucket rather than an arbitrary attacker-supplied URL.
+const CANDIDATE_PHOTOS_PREFIX = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/candidate-photos/`;
+
+export const candidatePhotoUrlSchema = z
+  .string()
+  .url()
+  .refine((url) => url.startsWith(CANDIDATE_PHOTOS_PREFIX), {
+    message: 'Photo URL must point to the candidate-photos storage bucket.',
+  });

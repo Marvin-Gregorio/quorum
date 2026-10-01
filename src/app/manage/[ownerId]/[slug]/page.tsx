@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { checkPageAccess } from '@/lib/access';
 import { getManagedElection } from '@/services/manage';
-import { UserMenu } from '@/components/user-menu';
+import { Header } from '@/components/header';
 import { ManageConsole, type Tally, type Turnout } from './manage-console';
 import { BREADCRUMB_LIST, BREADCRUMB_LINK } from '@/lib/ui-classes';
 
@@ -34,8 +34,6 @@ export default async function ManagePage({ params }: { params: Promise<{ ownerId
   if (access === 'sign-in') redirect(`/sign-in?next=${encodeURIComponent(`/manage/${ownerId}/${slug}`)}`);
   if (access === 'restricted' || userData.user.id !== election.ownerId) redirect(`/access-restricted?pageId=${election.id}`);
 
-  const { data: profile } = await supabase.from('profiles').select('*').eq('id', userData.user.id).single();
-
   const positionIds = election.positions.map((p) => p.id);
 
   const { data: tallyRows } = positionIds.length
@@ -60,13 +58,8 @@ export default async function ManagePage({ params }: { params: Promise<{ ownerId
   }));
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="flex justify-between items-center px-[clamp(24px,5vw,64px)] py-6 border-b border-line flex-wrap gap-3">
-        <div className="font-['Fraunces',serif] italic font-semibold text-xl">
-          Quorum
-        </div>
-        <UserMenu name={profile?.full_name ?? null} email={profile?.email ?? userData.user.email ?? null} />
-      </header>
+    <>
+      <Header />
 
       <nav aria-label="Breadcrumb" className="max-w-[900px] w-full mx-auto pt-4 px-6 pb-0">
         <ol className={BREADCRUMB_LIST}>
@@ -99,6 +92,6 @@ export default async function ManagePage({ params }: { params: Promise<{ ownerId
         initialTallies={initialTallies}
         initialTurnout={initialTurnout}
       />
-    </div>
+    </>
   );
 }
