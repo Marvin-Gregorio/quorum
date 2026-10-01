@@ -1,9 +1,10 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/lib/supabase/types';
 import type { Candidate, Position, Vote } from '@/types/models';
+import { signCandidatePhotoUrls } from '@/lib/candidate-photos';
 
 type PositionWithCandidates = Pick<Position, 'id' | 'title'> & {
-  candidates: Pick<Candidate, 'id' | 'name' | 'bio' | 'photo_url'>[];
+  candidates: Pick<Candidate, 'id' | 'name' | 'bio' | 'photo_path'>[];
 };
 
 export interface Ballot {
@@ -36,10 +37,15 @@ export async function getBallot(
   const { data: positionRows } = await supabase
     .from('positions')
     // See manage.ts for why the FK name must be spelled out here.
-    .select('id, title, candidates!candidates_position_id_fkey(id, name, bio, photo_url)')
+    .select('id, title, candidates!candidates_position_id_fkey(id, name, bio, photo_path)')
     .eq('page_id', page.id)
     .order('display_order');
   const positions = (positionRows ?? []) as unknown as PositionWithCandidates[];
+
+  const signedPhotoUrls = await signCandidatePhotoUrls(
+    supabase,
+    positions.flatMap((p) => p.candidates.map((c) => c.photo_path))
+  );
 
   const positionIds = positions.map((p) => p.id);
 
@@ -65,7 +71,7 @@ export async function getBallot(
         id: c.id,
         name: c.name,
         bio: c.bio,
-        photoUrl: c.photo_url,
+        photoUrl: c.photo_path ? (signedPhotoUrls.get(c.photo_path) ?? null) : null,
       })),
       selectedCandidateId: selectedByPosition.get(p.id) ?? null,
     })),

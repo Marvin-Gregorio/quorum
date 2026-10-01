@@ -34,8 +34,8 @@ describe('getBallot', () => {
                       id: 'pos-1',
                       title: 'Board Chair',
                       candidates: [
-                        { id: 'cand-1', name: 'Dana Okafor', bio: 'Bio', photo_url: null },
-                        { id: 'cand-2', name: 'Marcus Whitfield', bio: 'Bio', photo_url: null },
+                        { id: 'cand-1', name: 'Dana Okafor', bio: 'Bio', photo_path: null },
+                        { id: 'cand-2', name: 'Marcus Whitfield', bio: 'Bio', photo_path: null },
                       ],
                     },
                   ],

@@ -46,7 +46,7 @@ describe('getManagedElection', () => {
             select: () => ({
               eq: () => ({
                 order: async () => ({
-                  data: [{ id: 'pos-1', title: 'Board Chair', candidates: [{ id: 'cand-1', name: 'Dana Okafor', bio: 'Bio', photo_url: null }] }],
+                  data: [{ id: 'pos-1', title: 'Board Chair', candidates: [{ id: 'cand-1', name: 'Dana Okafor', bio: 'Bio', photo_path: null }] }],
                   error: null,
                 }),
               }),

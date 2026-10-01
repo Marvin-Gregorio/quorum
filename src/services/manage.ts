@@ -3,12 +3,13 @@ import type { Database } from '@/lib/supabase/types';
 import type { AllowedDomain, Candidate, Position } from '@/types/models';
 import { sanitizeText } from '@/lib/sanitize';
 import { generateUniqueSlug, nextSlugAttempt, slugify } from '@/lib/slug';
+import { signCandidatePhotoUrls } from '@/lib/candidate-photos';
 
 const MAX_SLUG_INSERT_ATTEMPTS = 5;
 const POSTGRES_UNIQUE_VIOLATION = '23505';
 
 type PositionWithCandidates = Pick<Position, 'id' | 'title'> & {
-  candidates: Pick<Candidate, 'id' | 'name' | 'bio' | 'photo_url'>[];
+  candidates: Pick<Candidate, 'id' | 'name' | 'bio' | 'photo_path'>[];
 };
 
 export interface ManagedElection {
@@ -50,10 +51,15 @@ export async function getManagedElection(
     // vote_tallies also has FKs to both positions and candidates, so
     // PostgREST otherwise sees two valid relationship paths and refuses
     // the query (PGRST201) instead of guessing which one is meant.
-    .select('id, title, candidates!candidates_position_id_fkey(id, name, bio, photo_url)')
+    .select('id, title, candidates!candidates_position_id_fkey(id, name, bio, photo_path)')
     .eq('page_id', page.id)
     .order('display_order');
   const positions = (positionRows ?? []) as unknown as PositionWithCandidates[];
+
+  const signedPhotoUrls = await signCandidatePhotoUrls(
+    supabase,
+    positions.flatMap((p) => p.candidates.map((c) => c.photo_path))
+  );
 
   return {
     id: page.id,
@@ -72,7 +78,7 @@ export async function getManagedElection(
         id: c.id,
         name: c.name,
         bio: c.bio,
-        photoUrl: c.photo_url,
+        photoUrl: c.photo_path ? (signedPhotoUrls.get(c.photo_path) ?? null) : null,
       })),
     })),
   };
@@ -266,11 +272,11 @@ export async function updateElectionSettings(
 export async function updateCandidatePhoto(
   supabase: SupabaseClient<Database>,
   candidateId: string,
-  photoUrl: string
+  photoPath: string
 ): Promise<{ ok: true } | { error: string }> {
   const { data, error } = await supabase
     .from('candidates')
-    .update({ photo_url: photoUrl })
+    .update({ photo_path: photoPath })
     .eq('id', candidateId)
     .select('id');
 

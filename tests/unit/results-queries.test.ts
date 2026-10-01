@@ -24,7 +24,7 @@ describe('getResultsSnapshot', () => {
             select: () => ({
               eq: () => ({
                 order: async () => ({
-                  data: [{ id: 'pos-1', title: 'Board Chair', candidates: [{ id: 'cand-1', name: 'Dana Okafor' }] }],
+                  data: [{ id: 'pos-1', title: 'Board Chair', candidates: [{ id: 'cand-1', name: 'Dana Okafor', photo_path: null }] }],
                   error: null,
                 }),
               }),

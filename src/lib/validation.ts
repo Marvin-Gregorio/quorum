@@ -29,14 +29,16 @@ export const voteSchema = z.object({
 });
 
 // Candidate photos are uploaded directly from the browser to the
-// candidate-photos Storage bucket (see AGENTS.md media rules), so the only
-// thing a Server Action can validate is that the resulting URL actually
-// points into that bucket rather than an arbitrary attacker-supplied URL.
-const CANDIDATE_PHOTOS_PREFIX = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/candidate-photos/`;
+// candidate-photos Storage bucket (see AGENTS.md media rules); what's
+// persisted is the object path (a signed URL is generated fresh at render
+// time, since signed URLs expire), so the only thing a Server Action can
+// validate is that the path actually has the shape the app's own upload
+// code produces — two UUID segments and the fixed `.webp` extension
+// compressCandidatePhoto always converts to — rather than an arbitrary
+// attacker-supplied path.
+const UUID_SEGMENT = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
+const CANDIDATE_PHOTO_PATH_PATTERN = new RegExp(`^${UUID_SEGMENT}/${UUID_SEGMENT}\\.webp$`, 'i');
 
-export const candidatePhotoUrlSchema = z
+export const candidatePhotoPathSchema = z
   .string()
-  .url()
-  .refine((url) => url.startsWith(CANDIDATE_PHOTOS_PREFIX), {
-    message: 'Photo URL must point to the candidate-photos storage bucket.',
-  });
+  .regex(CANDIDATE_PHOTO_PATH_PATTERN, 'Invalid photo path.');

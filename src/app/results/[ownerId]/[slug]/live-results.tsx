@@ -1,12 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import type { ResultsSnapshot } from '@/services/results';
 import { initialsFor, colorClassForIndex } from '@/lib/avatar';
 import { cn } from '@/lib/cn';
 import { toRoman } from '@/lib/roman';
 import { useLiveVoteTallies } from '@/lib/hooks/use-live-vote-tallies';
-import { avatarClass } from '@/lib/ui-classes';
+import { avatarClass, avatarImgClass } from '@/lib/ui-classes';
 
 export function LiveResults({
   ownerId,
@@ -98,9 +99,13 @@ export function LiveResults({
                   <div className="mb-5" key={cand.id}>
                     <div className="flex justify-between items-center mb-2 gap-3">
                       <div className="flex items-center gap-2.5 min-w-0">
-                        <div className={cn(avatarClass('md'), colorClassForIndex(ci))}>
-                          {initialsFor(cand.name)}
-                        </div>
+                        {cand.photoUrl ? (
+                          <Image src={cand.photoUrl} alt="" width={48} height={48} className={avatarImgClass('md')} />
+                        ) : (
+                          <div className={cn(avatarClass('md'), colorClassForIndex(ci))}>
+                            {initialsFor(cand.name)}
+                          </div>
+                        )}
                         <span className={cn('text-base', isLeader ? 'font-semibold text-seal-dark' : 'font-medium text-ink')}>
                           {cand.name}
                         </span>

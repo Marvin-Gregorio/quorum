@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Image from 'next/image';
 import { initialsFor } from '@/lib/avatar';
 import { cn } from '@/lib/cn';
 import { FIELD_LABEL, TEXT_INPUT, MODAL_OVERLAY, MODAL_PANEL, PRIMARY_BTN, SECONDARY_BTN } from '@/lib/ui-classes';
@@ -47,7 +46,10 @@ export function CandidateModal({
 
         <div className="flex items-center gap-4 mb-6">
           {previewUrl ? (
-            <Image src={previewUrl} alt="candidate profile pic" className="w-[72px] h-[72px] rounded-full object-cover shrink-0" />
+            // blob: object-URL preview of a picked-but-not-yet-uploaded file
+            // can't be optimized server-side by next/image.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={previewUrl} alt="candidate profile pic" className="w-[72px] h-[72px] rounded-full object-cover shrink-0" />
           ) : (
             <div
               className={cn(

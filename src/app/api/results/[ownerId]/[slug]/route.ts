@@ -19,8 +19,19 @@ export async function GET(request: Request, { params }: { params: Promise<{ owne
     const { data: userData } = await supabase.auth.getUser();
     const access = await checkPageAccess(supabase, page, userData.user?.id ?? null, userData.user?.email ?? null);
     if (access !== 'ok') return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+
+    const snapshot = await getResultsSnapshot(supabase, ownerId, slug);
+    // Never cached anywhere: this response was computed under one viewer's
+    // access check, so caching it at a shared layer (e.g. Vercel's edge)
+    // could serve it straight to a different, unauthorized viewer.
+    return NextResponse.json(snapshot, { headers: { 'Cache-Control': 'private, no-store' } });
   }
 
   const snapshot = await getResultsSnapshot(supabase, ownerId, slug);
-  return NextResponse.json(snapshot);
+  // Public results are the same for every viewer, so safe to cache at the
+  // edge — matches the ~5-8s poll interval every viewer already uses
+  // (live-results.tsx), turning N simultaneous polls into ~1 origin hit.
+  return NextResponse.json(snapshot, {
+    headers: { 'Cache-Control': 'public, s-maxage=5, stale-while-revalidate=15' },
+  });
 }
