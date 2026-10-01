@@ -85,6 +85,17 @@ export function ManageConsole({
 
   const [copiedLink, setCopiedLink] = useState<'ballot' | 'results' | null>(null);
 
+  // Reading Date.now() directly in the render body is impure (same props
+  // could render different status text from one render to the next, which
+  // can also surface as a hydration mismatch) — keep it in state instead,
+  // refreshed periodically so the open/closed/scheduled status line still
+  // updates on its own while this console is left open.
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(interval);
+  }, []);
+
   // voter_turnout carries page_id directly, so it's filtered server-side on
   // that column. Re-checked client-side against this same position id set as
   // a defence-in-depth belt-and-braces check (and to guard against a
@@ -164,7 +175,6 @@ export function ManageConsole({
   }
 
   const privacyLabel = settings.isPrivate ? `Private to ${settings.domains.join(', ') || 'no domains yet'}` : 'Public';
-  const now = Date.now();
   const opensAtMs = new Date(settings.votingStartsAt).getTime();
   const closesAtMs = new Date(settings.votingEndsAt).getTime();
   const statusLine =
