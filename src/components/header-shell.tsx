@@ -5,7 +5,7 @@ export function HeaderShell({ children, authSlot }: { children?: ReactNode; auth
   return (
     <header className="flex justify-between items-center px-[clamp(24px,5vw,64px)] py-6 border-b border-line flex-wrap gap-3">
       <Link href="/" className="font-['Fraunces',serif] italic font-semibold text-xl no-underline">
-        Quorum
+        {process.env.NEXT_PUBLIC_NAME}
       </Link>
       <div className="flex items-center gap-5 flex-wrap">
         {children}

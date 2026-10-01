@@ -75,7 +75,7 @@ export default async function AccessRestrictedPage({
               opacity="0.85"
               transform="rotate(-10 60 76)"
             >
-              Quorum
+              {process.env.NEXT_PUBLIC_NAME}
             </text>
           </svg>
 

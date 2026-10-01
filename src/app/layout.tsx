@@ -3,7 +3,7 @@ import './globals.css';
 import { Footer } from '@/components/footer';
 
 export const metadata: Metadata = {
-  title: 'Quorum',
+  title: process.env.NEXT_PUBLIC_NAME,
   description: 'Run a vote your whole organization can trust.',
 };
 

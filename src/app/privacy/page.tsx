@@ -1,13 +1,13 @@
 import { Header } from '@/components/header';
 
-export const metadata = { title: 'Privacy — Quorum' };
+export const metadata = { title: `Privacy — ${process.env.NEXT_PUBLIC_NAME}` };
 
 export default function PrivacyPage() {
   return (
     <>
       <Header />
 
-      <div className="grow px-[clamp(24px,5vw,64px)] pb-[clamp(48px,8vw,96px)]">
+      <div className="grow px-[clamp(24px,5vw,64px)] pb-[clamp(48px,8vw,96px)] mt-10">
         <div className="max-w-[640px] mx-auto">
           <h1 className="text-[32px] mb-2">Privacy policy</h1>
           <p className="text-ink-2 text-sm mb-10">Last updated September 2026.</p>
@@ -16,7 +16,7 @@ export default function PrivacyPage() {
             <section>
               <h2 className="text-ink text-lg mb-2">What this covers</h2>
               <p className="m-0">
-                This policy applies to every election page created on Quorum — both to the person who creates one
+                This policy applies to every election page created on {process.env.NEXT_PUBLIC_NAME} — both to the person who creates one
                 and to anyone who signs in to vote on or view one.
               </p>
             </section>
@@ -83,7 +83,7 @@ export default function PrivacyPage() {
             <section>
               <h2 className="text-ink text-lg mb-2">Changes to this policy</h2>
               <p className="m-0">
-                This policy may be updated as Quorum changes. Check back here if you have questions about how your
+                This policy may be updated as {process.env.NEXT_PUBLIC_NAME} changes. Check back here if you have questions about how your
                 information is handled.
               </p>
             </section>
@@ -91,8 +91,7 @@ export default function PrivacyPage() {
             <section>
               <h2 className="text-ink text-lg mb-2">Contact</h2>
               <p className="m-0">
-                This page doesn&apos;t yet list a contact address — add one here before relying on this policy for a
-                live election.
+                {process.env.NEXT_PUBLIC_SUPPORT_EMAIL}
               </p>
             </section>
           </div>
