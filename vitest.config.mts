@@ -13,6 +13,7 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     include: ['tests/unit/**/*.test.ts', 'tests/unit/**/*.test.tsx', 'tests/rls/**/*.test.ts'],
+    globalSetup: ['tests/rls/global-setup.ts'],
     // The RLS suite's beforeAll hooks each mint several real users/sessions
     // against a local Supabase Auth instance; with enough RLS test files
     // running as parallel workers, that can comfortably exceed vitest's

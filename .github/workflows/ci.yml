@@ -6,14 +6,11 @@ on:
   pull_request:
 
 jobs:
-  ci:
+  unit:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      # The RLS/e2e suites' Supabase realtime client needs Node >= 22 (see
-      # README's Requirements section) — use it for the whole job for
-      # consistency with local dev rather than switching versions mid-run.
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -24,6 +21,20 @@ jobs:
       - run: npm run lint
 
       - run: npm run test:unit
+
+  rls:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # The RLS suite's Supabase realtime client needs Node >= 22 (see
+      # README's Requirements section).
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
 
       - uses: supabase/setup-cli@v1
         with:
@@ -52,4 +63,20 @@ jobs:
 
       - run: npm run test:rls
 
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # No live Supabase connection needed at build time — next.config.ts
+      # only branches on NODE_ENV, never a Supabase env var, and every page
+      # that reads cookies()/auth is rendered dynamically at request time,
+      # not during the build.
       - run: npm run build
