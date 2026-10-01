@@ -40,10 +40,8 @@ export function SignInButtons() {
         className="flex items-center gap-[14px] w-full px-5 py-[14px] border border-ink rounded-[3px] bg-paper text-[15px] font-medium text-ink cursor-pointer no-underline box-border transition-colors duration-150 ease-in-out hover:bg-paper-2"
         onClick={() => signInWith('google')}
       >
-        <span className="w-5 h-5 rounded-full border-[1.5px] border-ink-2 flex items-center justify-center font-['Fraunces',serif] text-xs font-bold text-ink-2 shrink-0">
-          G
-        </span>
-        Continue with Google
+          <i className="devicon-google-plain"></i>
+          Continue with Google
       </button>
       <button
         type="button"
