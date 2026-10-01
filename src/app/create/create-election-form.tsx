@@ -128,10 +128,10 @@ export function CreateElectionForm() {
           const { error: uploadError } = await supabase.storage
             .from('candidate-photos')
             .upload(path, compressed, { upsert: true, contentType: 'image/webp' });
-          if (!uploadError) {
-            const { data } = supabase.storage.from('candidate-photos').getPublicUrl(path);
-            await updateCandidatePhotoAction(createdCand.id, data.publicUrl);
-          }
+          // Persisted as a path, not a URL — signed URLs expire, so a fresh
+          // one is generated server-side at render time instead (see
+          // src/lib/candidate-photos.ts).
+          if (!uploadError) await updateCandidatePhotoAction(createdCand.id, path);
         }
       }
 

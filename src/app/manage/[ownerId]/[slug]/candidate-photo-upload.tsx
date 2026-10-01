@@ -36,18 +36,27 @@ export function CandidatePhotoUpload({
         return;
       }
 
-      const { data } = supabase.storage.from('candidate-photos').getPublicUrl(path);
-
-      // Persist photo_url on the candidate row here so uploads work even
+      // Persist photo_path (not a URL — signed URLs expire, so what's
+      // durable is the object path; a fresh signed URL gets generated at
+      // render time instead) on the candidate row here so uploads work even
       // before a parent component is wired up to call an onUploaded
       // persistence handler of its own.
-      const result = await updateCandidatePhotoAction(candidateId, data.publicUrl);
+      const result = await updateCandidatePhotoAction(candidateId, path);
       if ('error' in result) {
         setError(result.error);
         return;
       }
 
-      onUploaded(data.publicUrl);
+      // The uploader is always this page's owner, so they always pass
+      // can_view_page_content's owner branch — signing their own fresh
+      // upload for an immediate preview never fails.
+      const { data, error: signError } = await supabase.storage.from('candidate-photos').createSignedUrl(path, 3600);
+      if (signError || !data) {
+        setError('Photo uploaded, but could not load a preview.');
+        return;
+      }
+
+      onUploaded(data.signedUrl);
     } finally {
       setUploading(false);
     }

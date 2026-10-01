@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import { initialsFor, colorClassForIndex } from '@/lib/avatar';
 import { cn } from '@/lib/cn';
 import { FIELD_LABEL, TEXT_INPUT, CANDIDATE_ROW, avatarClass, avatarImgClass } from '@/lib/ui-classes';
@@ -58,7 +57,10 @@ export function PositionsEditor({
                 <div className={cn(CANDIDATE_ROW, 'items-start')} key={cand.id}>
                   <div className="flex items-start gap-3.5">
                     {cand.previewUrl ? (
-                      <Image src={cand.previewUrl} alt="candidate profile pic" className={avatarImgClass('sm')} />
+                      // blob: object-URL preview of a picked-but-not-yet-uploaded
+                      // file can't be optimized server-side by next/image.
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={cand.previewUrl} alt="candidate profile pic" className={avatarImgClass('sm')} />
                     ) : (
                       <div className={cn(avatarClass('sm'), colorClassForIndex(ci))}>{initialsFor(cand.name)}</div>
                     )}

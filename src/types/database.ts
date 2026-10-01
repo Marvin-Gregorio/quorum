@@ -48,21 +48,21 @@ export type Database = {
           "bio": string
           "id": string
           "name": string
-          "photo_url": string | null
+          "photo_path": string | null
           "position_id": string
         }
         Insert: {
           "bio"?: string
           "id"?: string
           "name": string
-          "photo_url"?: string | null
+          "photo_path"?: string | null
           "position_id": string
         }
         Update: {
           "bio"?: string
           "id"?: string
           "name"?: string
-          "photo_url"?: string | null
+          "photo_path"?: string | null
           "position_id"?: string
         }
         Relationships: [{
@@ -283,16 +283,24 @@ export type Database = {
     }
     Views: { [_ in never]: never }
     Functions: {
+      "can_view_page_content": {
+        Args: { "p_page_id": string }
+        Returns: boolean
+      }
       "find_page_by_owner_slug": {
-        Args: { "p_owner_id": string; "p_slug": string }
+        Args: { "p_owner_id": string,"p_slug": string }
         Returns: {
           "is_private": boolean
           "page_id": string
         }[]
       }
+      "get_page_allowed_domains": {
+        Args: { "p_page_id": string }
+        Returns: string[]
+      }
       "get_page_privacy": { Args: { "p_page_id": string }; Returns: boolean }
       "is_domain_allowed": {
-        Args: { "p_email": string; "p_page_id": string }
+        Args: { "p_email": string,"p_page_id": string }
         Returns: boolean
       }
     }

@@ -27,9 +27,8 @@ export default async function AccessRestrictedPage({
     // is_private (nothing else).
     const { data: isPrivate } = await supabase.rpc('get_page_privacy', { p_page_id: pageId });
     if (isPrivate) {
-      const { data: domainRows } = await supabase.from('allowed_domains').select('domain').eq('page_id', pageId);
-      const domainList = (domainRows ?? []).map((d) => d.domain);
-      heading = domainList.length
+      const { data: domainList } = await supabase.rpc('get_page_allowed_domains', { p_page_id: pageId });
+      heading = domainList?.length
         ? `This election is only open to ${domainList.join(', ')}`
         : 'This election is only open to its creator.';
     }

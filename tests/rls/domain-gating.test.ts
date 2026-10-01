@@ -89,4 +89,26 @@ describe('domain gating on a private page', () => {
     });
     expect(error).toBeNull();
   });
+
+  // Migration 0013: allowed_domains' SELECT policy was tightened from a
+  // blanket `using (true)` (anyone could dump every page's domain list) to
+  // owner-only, with a narrow security-definer RPC for the one legitimate
+  // non-owner use case (access-restricted explaining a specific rejection).
+  it('hides a page\'s allowed_domains row from a direct table select by a non-owner', async () => {
+    const { data, error } = await outsider.client.from('allowed_domains').select('domain').eq('page_id', pageId);
+    expect(error).toBeNull();
+    expect(data).toEqual([]);
+  });
+
+  it('allows the owner to read their own page\'s allowed_domains via a direct table select', async () => {
+    const { data, error } = await owner.client.from('allowed_domains').select('domain').eq('page_id', pageId);
+    expect(error).toBeNull();
+    expect(data).toEqual([{ domain: 'insider-domain.example.com' }]);
+  });
+
+  it('lets a non-owner read the domain list for one known page via get_page_allowed_domains', async () => {
+    const { data, error } = await outsider.client.rpc('get_page_allowed_domains', { p_page_id: pageId });
+    expect(error).toBeNull();
+    expect(data).toEqual(['insider-domain.example.com']);
+  });
 });

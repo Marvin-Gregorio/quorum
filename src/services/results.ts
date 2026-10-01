@@ -1,16 +1,21 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/lib/supabase/types';
 import type { Candidate, Position, VoteTally } from '@/types/models';
+import { signCandidatePhotoUrls } from '@/lib/candidate-photos';
 
 type PositionWithCandidates = Pick<Position, 'id' | 'title'> & {
-  candidates: Pick<Candidate, 'id' | 'name'>[];
+  candidates: Pick<Candidate, 'id' | 'name' | 'photo_path'>[];
 };
 
 export interface ResultsSnapshot {
   pageId: string;
   title: string;
   organizationName: string;
-  positions: { id: string; title: string; candidates: { id: string; name: string; voteCount: number }[] }[];
+  positions: {
+    id: string;
+    title: string;
+    candidates: { id: string; name: string; photoUrl: string | null; voteCount: number }[];
+  }[];
 }
 
 export async function getResultsSnapshot(
@@ -29,10 +34,15 @@ export async function getResultsSnapshot(
   const { data: positionRows } = await supabase
     .from('positions')
     // See manage.ts for why the FK name must be spelled out here.
-    .select('id, title, candidates!candidates_position_id_fkey(id, name)')
+    .select('id, title, candidates!candidates_position_id_fkey(id, name, photo_path)')
     .eq('page_id', page.id)
     .order('display_order');
   const positions = (positionRows ?? []) as unknown as PositionWithCandidates[];
+
+  const signedPhotoUrls = await signCandidatePhotoUrls(
+    supabase,
+    positions.flatMap((p) => p.candidates.map((c) => c.photo_path))
+  );
 
   const positionIds = positions.map((p) => p.id);
   const { data: tallyRows } = await supabase
@@ -54,6 +64,7 @@ export async function getResultsSnapshot(
       candidates: p.candidates.map((c) => ({
         id: c.id,
         name: c.name,
+        photoUrl: c.photo_path ? (signedPhotoUrls.get(c.photo_path) ?? null) : null,
         voteCount: countFor(p.id, c.id),
       })),
     })),
