@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { Header } from '@/components/header';
 import { BallotIllustration } from '@/components/ballot-illustration';
-import { GHOST_BTN, PRIMARY_BTN, SECONDARY_BTN } from '@/lib/ui-classes';
+import { GHOST_BTN, PRIMARY_BTN } from '@/lib/ui-classes';
 import { cn } from '@/lib/cn';
 import { MoveRight } from 'lucide-react';
 
