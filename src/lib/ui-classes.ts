@@ -6,6 +6,9 @@ export const PRIMARY_BTN =
 export const SECONDARY_BTN =
   'bg-transparent border border-ink rounded-[3px] px-5 py-[11px] text-sm cursor-pointer text-ink';
 
+export const GHOST_BTN =
+  'bg-transparent px-5 py-[11px] text-sm cursor-pointer text-ink';
+
 export const SIGNIN_BTN =
   'inline-block border border-ink bg-transparent rounded-[3px] px-4 py-2 text-sm cursor-pointer text-ink no-underline';
 
