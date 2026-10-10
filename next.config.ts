@@ -1,22 +1,5 @@
 import type { NextConfig } from "next";
 
-// Every third-party origin the app actually loads from: Google Fonts
-// (the <link> in layout.tsx), devicon's CDN import (globals.css), and
-// Supabase (API/Storage over https, Realtime over wss). Kept as one list so
-// the CSP below and any future header changes stay in sync with reality
-// instead of silently drifting.
-const CONTENT_SECURITY_POLICY = [
-  "default-src 'self'",
-  "script-src 'self'",
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net",
-  "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net",
-  "img-src 'self' data: https://*.supabase.co",
-  "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
-  "frame-ancestors 'none'",
-  "base-uri 'self'",
-  "form-action 'self'",
-].join('; ');
-
 const nextConfig: NextConfig = {
   async headers() {
     const isProd = process.env.NODE_ENV === 'production';
@@ -31,14 +14,7 @@ const nextConfig: NextConfig = {
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
-          // CSP is production-only: Next's dev-mode HMR/React Refresh needs
-          // 'unsafe-eval' and other allowances a strict policy would break.
-          ...(isProd
-            ? [
-                { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
-                { key: 'Content-Security-Policy', value: CONTENT_SECURITY_POLICY },
-              ]
-            : []),
+          ...(isProd ? [{ key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' }] : []),
         ],
       },
     ];
