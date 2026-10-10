@@ -15,6 +15,12 @@ describe('buildContentSecurityPolicy', () => {
     expect(scriptSrc).not.toContain("'unsafe-inline'");
   });
 
+  it('allows blob: images for the client-side candidate photo preview', () => {
+    const csp = buildContentSecurityPolicy('abc123');
+    const imgSrc = csp.split('; ').find((d) => d.startsWith('img-src'))!;
+    expect(imgSrc.split(' ')).toContain('blob:');
+  });
+
   it('keeps the non-script directives', () => {
     const csp = buildContentSecurityPolicy('abc123');
     expect(csp).toContain("frame-ancestors 'none'");
