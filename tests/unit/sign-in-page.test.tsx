@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import SignInPage from '@/app/sign-in/page';
+import { FeedbackProvider } from '@/components/feedback-provider';
 
 // Header is an async Server Component (fetches the current Supabase auth
 // session) and can't be rendered by plain React Testing Library — this test
@@ -19,7 +20,11 @@ beforeAll(() => {
 
 describe('SignInPage', () => {
   it('renders both OAuth provider buttons', () => {
-    render(<SignInPage />);
+    render(
+      <FeedbackProvider>
+        <SignInPage />
+      </FeedbackProvider>
+    );
     expect(screen.getByRole('button', { name: /continue with google/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /continue with microsoft/i })).toBeInTheDocument();
   });

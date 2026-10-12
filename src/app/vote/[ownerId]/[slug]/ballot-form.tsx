@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { castVoteAction } from './actions';
 import { initialsFor, colorClassForIndex } from '@/lib/avatar';
+import { useFeedback } from '@/components/feedback-provider';
 import { cn } from '@/lib/cn';
 import { toRoman } from '@/lib/roman';
 import { PRIMARY_BTN, avatarClass, avatarImgClass } from '@/lib/ui-classes';
@@ -14,13 +15,17 @@ const RADIO_BUBBLE_CLASS =
   'transition-all duration-150 ease-in-out checked:border-seal checked:bg-seal ' +
   'checked:shadow-[inset_0_0_0_4px_var(--color-paper)]';
 
+function partialSaveMessage(error: string, savedCount: number): string {
+  if (savedCount === 0) return error;
+  return `${error} Your choices for ${savedCount} earlier position${savedCount === 1 ? ' was' : 's were'} saved; submit again to finish.`;
+}
+
 export function BallotForm({ ballot }: { ballot: Ballot }) {
   const [selections, setSelections] = useState<Record<string, string | null>>(
     Object.fromEntries(ballot.positions.map((p) => [p.id, p.selectedCandidateId]))
   );
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [justCast, setJustCast] = useState(false);
+  const { showError, showSuccess } = useFeedback();
 
   const allSelected = ballot.positions.length > 0 && ballot.positions.every((p) => !!selections[p.id]);
 
@@ -28,18 +33,22 @@ export function BallotForm({ ballot }: { ballot: Ballot }) {
     e.preventDefault();
     if (!allSelected) return;
     setSubmitting(true);
-    setError(null);
-    setJustCast(false);
+    // Votes are cast one position at a time, so a failure partway through
+    // leaves the earlier positions already saved; the message has to say so.
+    let savedCount = 0;
     try {
       const entries = Object.entries(selections).filter(([, candidateId]) => candidateId);
       for (const [positionId, candidateId] of entries) {
         const result = await castVoteAction(positionId, candidateId!);
         if ('error' in result) {
-          setError(result.error);
+          showError(partialSaveMessage(result.error, savedCount), 'Vote not recorded');
           return;
         }
+        savedCount++;
       }
-      setJustCast(true);
+      showSuccess('Your vote has been recorded. You can change it anytime before voting closes.');
+    } catch {
+      showError(partialSaveMessage('Something went wrong. Please try again.', savedCount), 'Vote not recorded');
     } finally {
       setSubmitting(false);
     }
@@ -57,16 +66,6 @@ export function BallotForm({ ballot }: { ballot: Ballot }) {
           Voting closes {new Date(ballot.votingEndsAt).toLocaleString(undefined, { dateStyle: 'long', timeStyle: 'short' })}.
           Choose one candidate per position.
         </p>
-        {error && (
-          <p role="alert" className="text-seal-dark text-sm mt-3">
-            {error}
-          </p>
-        )}
-        {justCast && !error && (
-          <p role="status" className="text-ledger text-sm mt-3">
-            Your vote has been recorded. You can change it anytime before voting closes.
-          </p>
-        )}
       </div>
 
       {ballot.positions.map((pos, pi) => (

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useFeedback } from '@/components/feedback-provider';
 import { createBrowserSupabaseClient } from '@/lib/supabase/client';
 import { compressCandidatePhoto } from '@/lib/image-compression';
 import { updateCandidatePhotoAction } from './actions';
@@ -15,15 +16,15 @@ export function CandidatePhotoUpload({
   onUploaded: (url: string) => void;
 }) {
   const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { showError, showSuccess } = useFeedback();
   const supabase = createBrowserSupabaseClient();
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
+    const input = e.target;
+    const file = input.files?.[0];
     if (!file) return;
 
     setUploading(true);
-    setError(null);
     try {
       const compressed = await compressCandidatePhoto(file);
       const path = `${pageId}/${candidateId}.webp`;
@@ -32,7 +33,7 @@ export function CandidatePhotoUpload({
         .upload(path, compressed, { upsert: true, contentType: 'image/webp' });
 
       if (uploadError) {
-        setError('Could not upload the photo.');
+        showError('Could not upload the photo.', 'Photo not uploaded');
         return;
       }
 
@@ -43,7 +44,7 @@ export function CandidatePhotoUpload({
       // persistence handler of its own.
       const result = await updateCandidatePhotoAction(candidateId, path);
       if ('error' in result) {
-        setError(result.error);
+        showError(result.error, 'Photo not uploaded');
         return;
       }
 
@@ -52,13 +53,19 @@ export function CandidatePhotoUpload({
       // upload for an immediate preview never fails.
       const { data, error: signError } = await supabase.storage.from('candidate-photos').createSignedUrl(path, 3600);
       if (signError || !data) {
-        setError('Photo uploaded, but could not load a preview.');
+        showError('Photo uploaded, but could not load a preview.', 'Preview unavailable');
         return;
       }
 
       onUploaded(data.signedUrl);
+      showSuccess('Photo uploaded.');
+    } catch {
+      showError('Something went wrong. Please try again.', 'Photo not uploaded');
     } finally {
       setUploading(false);
+      // Lets the same file be picked again after a failed attempt; the
+      // change event doesn't fire when the value is unchanged.
+      input.value = '';
     }
   }
 
@@ -74,7 +81,6 @@ export function CandidatePhotoUpload({
           className="sr-only"
         />
       </label>
-      {error && <p role="alert">{error}</p>}
     </div>
   );
 }

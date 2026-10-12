@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { updateElectionSettingsAction } from './actions';
+import { useFeedback } from '@/components/feedback-provider';
 import { cn } from '@/lib/cn';
 import {
   MODAL_OVERLAY,
@@ -51,7 +52,7 @@ export function ElectionSettingsModal({
   const [domains, setDomains] = useState(initial.domains);
   const [domainInput, setDomainInput] = useState('');
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { showError, showSuccess } = useFeedback();
 
   function addDomain() {
     const value = domainInput.trim().toLowerCase();
@@ -65,8 +66,13 @@ export function ElectionSettingsModal({
   }
 
   async function save() {
+    // An emptied datetime-local input yields an Invalid Date, whose
+    // toISOString() throws instead of returning a value to validate.
+    if (!opens || !closes) {
+      showError('Please set both an opening and closing date/time for voting.', 'Settings not saved');
+      return;
+    }
     setSaving(true);
-    setError(null);
     try {
       const votingStartsAt = new Date(opens).toISOString();
       const votingEndsAt = new Date(closes).toISOString();
@@ -79,10 +85,13 @@ export function ElectionSettingsModal({
         domains,
       });
       if ('error' in result) {
-        setError(result.error);
+        showError(result.error, 'Settings not saved');
         return;
       }
+      showSuccess('Settings saved.');
       onSaved({ organizationName: orgName, title, votingStartsAt, votingEndsAt, isPrivate, domains });
+    } catch {
+      showError('Something went wrong. Please try again.', 'Settings not saved');
     } finally {
       setSaving(false);
     }
@@ -92,11 +101,6 @@ export function ElectionSettingsModal({
     <div className={MODAL_OVERLAY}>
       <div role="dialog" aria-label="Election settings" className={cn(MODAL_PANEL, MODAL_PANEL_WIDE)}>
         <h2 className="text-xl mb-6">Election settings</h2>
-        {error && (
-          <p role="alert" className="text-seal-dark text-sm mb-4">
-            {error}
-          </p>
-        )}
         <div className="mb-5">
           <label className={FIELD_LABEL} htmlFor="sm-org">
             Organization name

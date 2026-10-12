@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { FeedbackProvider } from '@/components/feedback-provider';
 import { Footer } from '@/components/footer';
 
 export const metadata: Metadata = {
@@ -17,10 +18,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body>
-        <div className="min-h-screen flex flex-col">
-          <div className="grow flex flex-col">{children}</div>
-          <Footer />
-        </div>
+        <FeedbackProvider>
+          <div className="min-h-screen flex flex-col">
+            <div className="grow flex flex-col">{children}</div>
+            <Footer />
+          </div>
+        </FeedbackProvider>
       </body>
     </html>
   );
