@@ -1,5 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 
+const PAGE_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+
 const updates: any[] = [];
 const deletedDomainsFor: string[] = [];
 const insertedDomains: any[] = [];
@@ -37,7 +39,7 @@ import { updateElectionSettingsAction } from '@/app/manage/[ownerId]/[slug]/acti
 
 describe('updateElectionSettingsAction', () => {
   it('updates the page and replaces its allowed domains', async () => {
-    const result = await updateElectionSettingsAction('page-1', {
+    const result = await updateElectionSettingsAction(PAGE_ID, {
       organizationName: 'Riverside Tenants Cooperative',
       title: '2026 Board Election',
       votingStartsAt: '2026-02-28T09:00:00.000Z',
@@ -49,12 +51,12 @@ describe('updateElectionSettingsAction', () => {
     expect(result).toEqual({ ok: true });
     expect(updates).toHaveLength(1);
     expect(updates[0].ownerId).toBe('owner-1');
-    expect(deletedDomainsFor).toEqual(['page-1']);
-    expect(insertedDomains).toEqual([{ page_id: 'page-1', domain: 'riverside.coop' }]);
+    expect(deletedDomainsFor).toEqual([PAGE_ID]);
+    expect(insertedDomains).toEqual([{ page_id: PAGE_ID, domain: 'riverside.coop' }]);
   });
 
   it('rejects an invalid settings payload', async () => {
-    const result = await updateElectionSettingsAction('page-1', {
+    const result = await updateElectionSettingsAction(PAGE_ID, {
       organizationName: '',
       title: '2026 Board Election',
       votingStartsAt: '2026-02-28T09:00:00.000Z',
@@ -63,5 +65,33 @@ describe('updateElectionSettingsAction', () => {
       domains: [],
     });
     expect('error' in result).toBe(true);
+  });
+
+  it('rejects a non-UUID page id before touching the database', async () => {
+    const before = updates.length;
+    const result = await updateElectionSettingsAction('page-1', {
+      organizationName: 'Riverside Tenants Cooperative',
+      title: '2026 Board Election',
+      votingStartsAt: '2026-02-28T09:00:00.000Z',
+      votingEndsAt: '2026-03-14T17:00:00.000Z',
+      isPrivate: false,
+      domains: [],
+    });
+    expect('error' in result).toBe(true);
+    expect(updates).toHaveLength(before);
+  });
+
+  it('rejects a malformed allowed domain', async () => {
+    const before = updates.length;
+    const result = await updateElectionSettingsAction(PAGE_ID, {
+      organizationName: 'Riverside Tenants Cooperative',
+      title: '2026 Board Election',
+      votingStartsAt: '2026-02-28T09:00:00.000Z',
+      votingEndsAt: '2026-03-14T17:00:00.000Z',
+      isPrivate: true,
+      domains: ['foo bar'],
+    });
+    expect(result).toEqual({ error: 'Allowed domains must look like "example.com".' });
+    expect(updates).toHaveLength(before);
   });
 });

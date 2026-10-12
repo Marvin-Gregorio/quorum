@@ -7,8 +7,13 @@ import { createElectionAction } from './actions';
 import { createBrowserSupabaseClient } from '@/lib/supabase/client';
 import { compressCandidatePhoto } from '@/lib/image-compression';
 import { updateCandidatePhotoAction } from '@/app/manage/[ownerId]/[slug]/actions';
+import { useFeedback } from '@/components/feedback-provider';
 import { colorClassForIndex } from '@/lib/avatar';
 import { cn } from '@/lib/cn';
+import { toIsoOrEmpty } from '@/lib/datetime';
+import { candidatePhotoPathSchema, createElectionSchema, domainSchema, photoFileSchema } from '@/lib/validation';
+import { parseInput } from '@/lib/validate-input';
+import type { CreatedElection } from '@/services/manage';
 import { CandidateModal, type CandidateDraft } from './candidate-modal';
 import { PositionsEditor, type EditablePosition } from './positions-editor';
 import { BREADCRUMB_LIST, BREADCRUMB_LINK, TEXT_INPUT, FIELD_LABEL, RADIO_OPTION, RADIO_CHOICE_CLASS, CHIP, CHIP_REMOVE_BTN, PRIMARY_BTN } from '@/lib/ui-classes';
@@ -32,13 +37,18 @@ export function CreateElectionForm() {
   const [domainInput, setDomainInput] = useState('');
   const [positions, setPositions] = useState<Position[]>([]);
   const [modalFor, setModalFor] = useState<{ positionId: string; candidateId: string | null } | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const { showError, showSuccess } = useFeedback();
 
   function addDomain() {
-    const value = domainInput.trim().toLowerCase();
-    if (!value || domains.includes(value)) return;
-    setDomains([...domains, value]);
+    if (!domainInput.trim()) return;
+    const parsed = parseInput(domainSchema, domainInput);
+    if ('error' in parsed) {
+      showError(parsed.error, 'Domain not added');
+      return;
+    }
+    if (domains.includes(parsed.data)) return;
+    setDomains([...domains, parsed.data]);
     setDomainInput('');
   }
 
@@ -87,55 +97,86 @@ export function CreateElectionForm() {
     setModalFor(null);
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!votingStartsAt || !votingEndsAt) {
-      setError('Please set both an opening and closing date/time for voting.');
-      return;
-    }
-    setError(null);
-    setSubmitting(true);
-    try {
-      const result = await createElectionAction({
-        organizationName,
-        title,
-        votingStartsAt: new Date(votingStartsAt).toISOString(),
-        votingEndsAt: new Date(votingEndsAt).toISOString(),
-        isPrivate,
-        domains,
-        positions: positions.map((p) => ({
-          title: p.title,
-          candidates: p.candidates.map((c) => ({ name: c.name, bio: c.bio })),
-        })),
-      });
-      if ('error' in result) {
-        setError(result.error);
-        return;
-      }
-
-      // Positions/candidates come back in the same order they were sent, so
-      // pair them up by index to find each candidate's real id and upload
-      // any photo picked during creation now that a row exists to attach it to.
-      const supabase = createBrowserSupabaseClient();
-      for (const [pi, localPos] of positions.entries()) {
-        const createdPos = result.positions[pi];
-        if (!createdPos) continue;
-        for (const [ci, localCand] of localPos.candidates.entries()) {
-          const createdCand = createdPos.candidates[ci];
-          if (!createdCand || !localCand.photoFile) continue;
-          const compressed = await compressCandidatePhoto(localCand.photoFile);
-          const path = `${result.pageId}/${createdCand.id}.webp`;
+  // Positions/candidates come back in the same order they were sent, so
+  // pair them up by index to find each candidate's real id and upload
+  // any photo picked during creation now that a row exists to attach it to.
+  // Returns how many photos failed, since the election itself already exists
+  // by this point and a failed photo must not abort the redirect.
+  async function uploadPendingPhotos(created: CreatedElection): Promise<number> {
+    const supabase = createBrowserSupabaseClient();
+    let failed = 0;
+    for (const [pi, localPos] of positions.entries()) {
+      const createdPos = created.positions[pi];
+      if (!createdPos) continue;
+      for (const [ci, localCand] of localPos.candidates.entries()) {
+        const createdCand = createdPos.candidates[ci];
+        if (!createdCand || !localCand.photoFile) continue;
+        try {
+          const file = parseInput(photoFileSchema, localCand.photoFile);
+          const path = parseInput(candidatePhotoPathSchema, `${created.pageId}/${createdCand.id}.webp`);
+          if ('error' in file || 'error' in path) {
+            failed++;
+            continue;
+          }
+          const compressed = await compressCandidatePhoto(file.data);
           const { error: uploadError } = await supabase.storage
             .from('candidate-photos')
-            .upload(path, compressed, { upsert: true, contentType: 'image/webp' });
+            .upload(path.data, compressed, { upsert: true, contentType: 'image/webp' });
+          if (uploadError) {
+            failed++;
+            continue;
+          }
           // Persisted as a path, not a URL — signed URLs expire, so a fresh
           // one is generated server-side at render time instead (see
           // src/lib/candidate-photos.ts).
-          if (!uploadError) await updateCandidatePhotoAction(createdCand.id, path);
+          const photoResult = await updateCandidatePhotoAction(createdCand.id, path.data);
+          if ('error' in photoResult) failed++;
+        } catch {
+          failed++;
         }
       }
+    }
+    return failed;
+  }
 
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const parsed = parseInput(createElectionSchema, {
+      organizationName,
+      title,
+      votingStartsAt: toIsoOrEmpty(votingStartsAt),
+      votingEndsAt: toIsoOrEmpty(votingEndsAt),
+      isPrivate,
+      domains,
+      positions: positions.map((p) => ({
+        title: p.title,
+        candidates: p.candidates.map((c) => ({ name: c.name, bio: c.bio })),
+      })),
+    });
+    if ('error' in parsed) {
+      showError(parsed.error, 'Election not created');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const result = await createElectionAction(parsed.data);
+      if ('error' in result) {
+        showError(result.error, 'Election not created');
+        return;
+      }
+
+      const failedPhotos = await uploadPendingPhotos(result);
+      if (failedPhotos > 0) {
+        showError(
+          `Your election was created, but ${failedPhotos} candidate photo${failedPhotos === 1 ? '' : 's'} could not be uploaded. You can add ${failedPhotos === 1 ? 'it' : 'them'} from the manage page.`,
+          'Some photos were not uploaded'
+        );
+      } else {
+        showSuccess('Election created.');
+      }
       router.push(`/manage/${result.ownerId}/${result.slug}`);
+    } catch {
+      showError('Something went wrong. Please try again.', 'Election not created');
     } finally {
       setSubmitting(false);
     }
@@ -173,12 +214,6 @@ export function CreateElectionForm() {
         className="max-w-[640px] w-full mx-auto px-6 pt-6 pb-24 grow"
       >
         <h1 className="text-[clamp(26px,4vw,32px)] mb-8">Create an election</h1>
-
-        {error && (
-          <p role="alert" className="text-seal-dark text-sm mb-4">
-            {error}
-          </p>
-        )}
 
         <div>
           <label className={FIELD_LABEL} htmlFor="org-name">

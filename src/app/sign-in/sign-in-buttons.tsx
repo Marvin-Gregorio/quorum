@@ -1,16 +1,20 @@
 'use client';
 
+import { useFeedback } from '@/components/feedback-provider';
 import { createBrowserSupabaseClient } from '@/lib/supabase/client';
+import { safeNextPathSchema } from '@/lib/validation';
 
 export function SignInButtons() {
   const supabase = createBrowserSupabaseClient();
+  const { showError } = useFeedback();
 
   async function signInWith(provider: 'google' | 'azure') {
     // Thread the caller's intended destination (e.g. a voter who followed a
     // link to /vote/some-slug and had to sign in first) through the OAuth
     // round trip as a `next` query param, so the callback route can send
     // them back to it instead of always landing on /profile.
-    const next = new URLSearchParams(window.location.search).get('next');
+    const parsedNext = safeNextPathSchema.safeParse(new URLSearchParams(window.location.search).get('next'));
+    const next = parsedNext.success ? parsedNext.data : null;
     const callbackUrl = new URL('/auth/callback', window.location.origin);
     if (next) {
       callbackUrl.searchParams.set('next', next);
@@ -21,16 +25,21 @@ export function SignInButtons() {
       document.cookie = `post_auth_redirect=${encodeURIComponent(next)}; path=/; max-age=600; samesite=lax`;
     }
 
-    await supabase.auth.signInWithOAuth({
-      provider,
-      options: {
-        redirectTo: callbackUrl.toString(),
-        // Azure/Microsoft requires the `email` scope to actually return an
-        // email claim (per Supabase's Azure provider docs); Google returns
-        // it without an extra scope.
-        ...(provider === 'azure' ? { scopes: 'email' } : {}),
-      },
-    });
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: callbackUrl.toString(),
+          // Azure/Microsoft requires the `email` scope to actually return an
+          // email claim (per Supabase's Azure provider docs); Google returns
+          // it without an extra scope.
+          ...(provider === 'azure' ? { scopes: 'email' } : {}),
+        },
+      });
+      if (error) showError('Could not start sign-in. Please try again.', 'Sign-in failed');
+    } catch {
+      showError('Could not start sign-in. Please try again.', 'Sign-in failed');
+    }
   }
 
   return (

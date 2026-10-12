@@ -34,4 +34,11 @@ describe('castVoteAction', () => {
     expect(result).toEqual({ error: 'Please select a candidate before casting your vote.' });
     expect(upserts).toHaveLength(before);
   });
+
+  it('rejects non-UUID ids without any database call', async () => {
+    const before = upserts.length;
+    const result = await castVoteAction('p1', 'c1');
+    expect('error' in result).toBe(true);
+    expect(upserts).toHaveLength(before);
+  });
 });

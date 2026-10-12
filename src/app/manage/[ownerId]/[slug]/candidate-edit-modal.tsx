@@ -4,7 +4,10 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { updateCandidateAction } from './actions';
 import { CandidatePhotoUpload } from './candidate-photo-upload';
+import { useFeedback } from '@/components/feedback-provider';
 import { initialsFor } from '@/lib/avatar';
+import { candidateSchema } from '@/lib/validation';
+import { parseInput } from '@/lib/validate-input';
 import { FIELD_LABEL, TEXT_INPUT, MODAL_OVERLAY, MODAL_PANEL, PRIMARY_BTN, SECONDARY_BTN } from '@/lib/ui-classes';
 
 export interface EditableCandidate {
@@ -30,18 +33,25 @@ export function CandidateEditModal({
   const [bio, setBio] = useState(initial.bio);
   const [photoUrl, setPhotoUrl] = useState(initial.photoUrl);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { showError, showSuccess } = useFeedback();
 
   async function save() {
+    const parsed = parseInput(candidateSchema, { name, bio });
+    if ('error' in parsed) {
+      showError(parsed.error, 'Candidate not saved');
+      return;
+    }
     setSaving(true);
-    setError(null);
     try {
-      const result = await updateCandidateAction(initial.candidateId, { name, bio });
+      const result = await updateCandidateAction(initial.candidateId, parsed.data);
       if ('error' in result) {
-        setError(result.error);
+        showError(result.error, 'Candidate not saved');
         return;
       }
-      onSaved({ ...initial, name, bio, photoUrl });
+      showSuccess('Candidate updated.');
+      onSaved({ ...initial, ...parsed.data, photoUrl });
+    } catch {
+      showError('Something went wrong. Please try again.', 'Candidate not saved');
     } finally {
       setSaving(false);
     }
@@ -51,11 +61,6 @@ export function CandidateEditModal({
     <div className={MODAL_OVERLAY}>
       <div role="dialog" aria-label="Edit candidate" className={MODAL_PANEL}>
         <h2 className="text-xl mb-6">Edit candidate</h2>
-        {error && (
-          <p role="alert" className="text-seal-dark text-sm mb-4">
-            {error}
-          </p>
-        )}
         <div className="flex items-center gap-4 mb-6">
           {photoUrl ? (
             <Image src={photoUrl} alt="" width={72} height={72} className="rounded-full object-cover shrink-0" />
