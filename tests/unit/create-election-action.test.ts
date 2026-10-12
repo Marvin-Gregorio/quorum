@@ -73,4 +73,44 @@ describe('createElectionAction', () => {
     });
     expect('error' in result).toBe(true);
   });
+
+  const valid = {
+    organizationName: 'Riverside Tenants Cooperative',
+    title: '2026 Board Election',
+    votingStartsAt: FUTURE_STARTS_AT,
+    votingEndsAt: FUTURE_ENDS_AT,
+    isPrivate: false,
+    domains: [],
+    positions: [{ title: 'Board Chair', candidates: [{ name: 'Dana Okafor', bio: '' }] }],
+  };
+
+  it.each([
+    ['positions that are not an array', { ...valid, positions: 'x' }],
+    ['a missing positions field', { ...valid, positions: undefined }],
+    ['an invalid allowed domain', { ...valid, isPrivate: true, domains: ['foo bar'] }],
+    ['an empty candidate name', { ...valid, positions: [{ title: 'Chair', candidates: [{ name: '', bio: '' }] }] }],
+    ['no payload at all', undefined],
+  ])('returns an error, not a throw, for %s', async (_label, payload) => {
+    const before = insertedRows.pages.length;
+    const result = await createElectionAction(payload as never);
+    expect('error' in result).toBe(true);
+    expect(insertedRows.pages).toHaveLength(before);
+  });
+
+  it('rejects a title that is only HTML tags before inserting anything', async () => {
+    const before = insertedRows.pages.length;
+    const result = await createElectionAction({ ...valid, title: '<b></b>' });
+    expect(result).toEqual({ error: 'Names and titles cannot be empty once HTML tags are removed.' });
+    expect(insertedRows.pages).toHaveLength(before);
+  });
+
+  it('echoes the sanitized (not raw) names back to the client', async () => {
+    const result = await createElectionAction({
+      ...valid,
+      positions: [{ title: '<i>Chair</i>', candidates: [{ name: '<b>Dana</b>', bio: '' }] }],
+    });
+    if ('error' in result) throw new Error(result.error);
+    expect(result.positions[0].title).toBe('Chair');
+    expect(result.positions[0].candidates[0].name).toBe('Dana');
+  });
 });

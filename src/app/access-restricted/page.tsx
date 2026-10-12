@@ -3,11 +3,10 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { Header } from '@/components/header';
 import { PRIMARY_BTN } from '@/lib/ui-classes';
 import { cn } from '@/lib/cn';
+import { safeNextPathSchema } from '@/lib/validation';
 
-// Only a same-origin relative path is a safe redirect target — see
-// auth/callback/route.ts's isSafeNextPath for the same rule and rationale.
 function isSafeNextPath(next: string | undefined): next is string {
-  return !!next && next.startsWith('/') && !next.startsWith('//');
+  return safeNextPathSchema.safeParse(next).success;
 }
 
 export default async function AccessRestrictedPage({

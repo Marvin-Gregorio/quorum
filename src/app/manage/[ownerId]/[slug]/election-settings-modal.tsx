@@ -4,6 +4,9 @@ import { useState } from 'react';
 import { updateElectionSettingsAction } from './actions';
 import { useFeedback } from '@/components/feedback-provider';
 import { cn } from '@/lib/cn';
+import { toIsoOrEmpty } from '@/lib/datetime';
+import { domainSchema, pageSettingsSchema } from '@/lib/validation';
+import { parseInput } from '@/lib/validate-input';
 import {
   MODAL_OVERLAY,
   MODAL_PANEL,
@@ -55,9 +58,14 @@ export function ElectionSettingsModal({
   const { showError, showSuccess } = useFeedback();
 
   function addDomain() {
-    const value = domainInput.trim().toLowerCase();
-    if (!value || domains.includes(value)) return;
-    setDomains([...domains, value]);
+    if (!domainInput.trim()) return;
+    const parsed = parseInput(domainSchema, domainInput);
+    if ('error' in parsed) {
+      showError(parsed.error, 'Domain not added');
+      return;
+    }
+    if (domains.includes(parsed.data)) return;
+    setDomains([...domains, parsed.data]);
     setDomainInput('');
   }
 
@@ -66,30 +74,27 @@ export function ElectionSettingsModal({
   }
 
   async function save() {
-    // An emptied datetime-local input yields an Invalid Date, whose
-    // toISOString() throws instead of returning a value to validate.
-    if (!opens || !closes) {
-      showError('Please set both an opening and closing date/time for voting.', 'Settings not saved');
+    const parsed = parseInput(pageSettingsSchema, {
+      organizationName: orgName,
+      title,
+      votingStartsAt: toIsoOrEmpty(opens),
+      votingEndsAt: toIsoOrEmpty(closes),
+      isPrivate,
+      domains,
+    });
+    if ('error' in parsed) {
+      showError(parsed.error, 'Settings not saved');
       return;
     }
     setSaving(true);
     try {
-      const votingStartsAt = new Date(opens).toISOString();
-      const votingEndsAt = new Date(closes).toISOString();
-      const result = await updateElectionSettingsAction(pageId, {
-        organizationName: orgName,
-        title,
-        votingStartsAt,
-        votingEndsAt,
-        isPrivate,
-        domains,
-      });
+      const result = await updateElectionSettingsAction(pageId, parsed.data);
       if ('error' in result) {
         showError(result.error, 'Settings not saved');
         return;
       }
       showSuccess('Settings saved.');
-      onSaved({ organizationName: orgName, title, votingStartsAt, votingEndsAt, isPrivate, domains });
+      onSaved(parsed.data);
     } catch {
       showError('Something went wrong. Please try again.', 'Settings not saved');
     } finally {

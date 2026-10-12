@@ -1,6 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
 
-const state = { positions: [{ id: 'pos-1', title: 'Board Chair' }] };
+const PAGE_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+const POSITION_ID = '11111111-1111-4111-8111-111111111111';
+
+const state = { positions: [{ id: POSITION_ID, title: 'Board Chair' }] };
 
 vi.mock('@/lib/supabase/server', () => ({
   createServerSupabaseClient: vi.fn(async () => ({
@@ -33,22 +36,30 @@ vi.mock('@/lib/supabase/server', () => ({
   })),
 }));
 
+import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { createPositionAction, deletePositionAction } from '@/app/manage/[ownerId]/[slug]/actions';
 
 describe('position actions', () => {
   it('creates a position under a page', async () => {
-    const result = await createPositionAction('page-1', 'Treasurer');
+    const result = await createPositionAction(PAGE_ID, 'Treasurer');
     expect('id' in result).toBe(true);
   });
 
   it('deletes a position', async () => {
-    const result = await deletePositionAction('pos-1');
+    const result = await deletePositionAction(POSITION_ID);
     expect(result).toEqual({ ok: true });
-    expect(state.positions.find((p) => p.id === 'pos-1')).toBeUndefined();
+    expect(state.positions.find((p) => p.id === POSITION_ID)).toBeUndefined();
   });
 
   it('rejects an empty position title', async () => {
-    const result = await createPositionAction('page-1', '');
+    const result = await createPositionAction(PAGE_ID, '');
     expect('error' in result).toBe(true);
+  });
+
+  it('rejects non-UUID ids before creating a Supabase client', async () => {
+    vi.mocked(createServerSupabaseClient).mockClear();
+    expect('error' in (await deletePositionAction('pos-1'))).toBe(true);
+    expect('error' in (await createPositionAction('page-1', 'Treasurer'))).toBe(true);
+    expect(createServerSupabaseClient).not.toHaveBeenCalled();
   });
 });

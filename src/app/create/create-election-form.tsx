@@ -10,6 +10,9 @@ import { updateCandidatePhotoAction } from '@/app/manage/[ownerId]/[slug]/action
 import { useFeedback } from '@/components/feedback-provider';
 import { colorClassForIndex } from '@/lib/avatar';
 import { cn } from '@/lib/cn';
+import { toIsoOrEmpty } from '@/lib/datetime';
+import { candidatePhotoPathSchema, createElectionSchema, domainSchema, photoFileSchema } from '@/lib/validation';
+import { parseInput } from '@/lib/validate-input';
 import type { CreatedElection } from '@/services/manage';
 import { CandidateModal, type CandidateDraft } from './candidate-modal';
 import { PositionsEditor, type EditablePosition } from './positions-editor';
@@ -38,9 +41,14 @@ export function CreateElectionForm() {
   const { showError, showSuccess } = useFeedback();
 
   function addDomain() {
-    const value = domainInput.trim().toLowerCase();
-    if (!value || domains.includes(value)) return;
-    setDomains([...domains, value]);
+    if (!domainInput.trim()) return;
+    const parsed = parseInput(domainSchema, domainInput);
+    if ('error' in parsed) {
+      showError(parsed.error, 'Domain not added');
+      return;
+    }
+    if (domains.includes(parsed.data)) return;
+    setDomains([...domains, parsed.data]);
     setDomainInput('');
   }
 
@@ -104,11 +112,16 @@ export function CreateElectionForm() {
         const createdCand = createdPos.candidates[ci];
         if (!createdCand || !localCand.photoFile) continue;
         try {
-          const compressed = await compressCandidatePhoto(localCand.photoFile);
-          const path = `${created.pageId}/${createdCand.id}.webp`;
+          const file = parseInput(photoFileSchema, localCand.photoFile);
+          const path = parseInput(candidatePhotoPathSchema, `${created.pageId}/${createdCand.id}.webp`);
+          if ('error' in file || 'error' in path) {
+            failed++;
+            continue;
+          }
+          const compressed = await compressCandidatePhoto(file.data);
           const { error: uploadError } = await supabase.storage
             .from('candidate-photos')
-            .upload(path, compressed, { upsert: true, contentType: 'image/webp' });
+            .upload(path.data, compressed, { upsert: true, contentType: 'image/webp' });
           if (uploadError) {
             failed++;
             continue;
@@ -116,7 +129,7 @@ export function CreateElectionForm() {
           // Persisted as a path, not a URL — signed URLs expire, so a fresh
           // one is generated server-side at render time instead (see
           // src/lib/candidate-photos.ts).
-          const photoResult = await updateCandidatePhotoAction(createdCand.id, path);
+          const photoResult = await updateCandidatePhotoAction(createdCand.id, path.data);
           if ('error' in photoResult) failed++;
         } catch {
           failed++;
@@ -128,24 +141,25 @@ export function CreateElectionForm() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!votingStartsAt || !votingEndsAt) {
-      showError('Please set both an opening and closing date/time for voting.', 'Election not created');
+    const parsed = parseInput(createElectionSchema, {
+      organizationName,
+      title,
+      votingStartsAt: toIsoOrEmpty(votingStartsAt),
+      votingEndsAt: toIsoOrEmpty(votingEndsAt),
+      isPrivate,
+      domains,
+      positions: positions.map((p) => ({
+        title: p.title,
+        candidates: p.candidates.map((c) => ({ name: c.name, bio: c.bio })),
+      })),
+    });
+    if ('error' in parsed) {
+      showError(parsed.error, 'Election not created');
       return;
     }
     setSubmitting(true);
     try {
-      const result = await createElectionAction({
-        organizationName,
-        title,
-        votingStartsAt: new Date(votingStartsAt).toISOString(),
-        votingEndsAt: new Date(votingEndsAt).toISOString(),
-        isPrivate,
-        domains,
-        positions: positions.map((p) => ({
-          title: p.title,
-          candidates: p.candidates.map((c) => ({ name: c.name, bio: c.bio })),
-        })),
-      });
+      const result = await createElectionAction(parsed.data);
       if ('error' in result) {
         showError(result.error, 'Election not created');
         return;

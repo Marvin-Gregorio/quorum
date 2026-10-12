@@ -2,6 +2,7 @@
 
 import { useFeedback } from '@/components/feedback-provider';
 import { createBrowserSupabaseClient } from '@/lib/supabase/client';
+import { safeNextPathSchema } from '@/lib/validation';
 
 export function SignInButtons() {
   const supabase = createBrowserSupabaseClient();
@@ -12,7 +13,8 @@ export function SignInButtons() {
     // link to /vote/some-slug and had to sign in first) through the OAuth
     // round trip as a `next` query param, so the callback route can send
     // them back to it instead of always landing on /profile.
-    const next = new URLSearchParams(window.location.search).get('next');
+    const parsedNext = safeNextPathSchema.safeParse(new URLSearchParams(window.location.search).get('next'));
+    const next = parsedNext.success ? parsedNext.data : null;
     const callbackUrl = new URL('/auth/callback', window.location.origin);
     if (next) {
       callbackUrl.searchParams.set('next', next);

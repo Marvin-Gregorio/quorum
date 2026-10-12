@@ -6,6 +6,8 @@ import { updateCandidateAction } from './actions';
 import { CandidatePhotoUpload } from './candidate-photo-upload';
 import { useFeedback } from '@/components/feedback-provider';
 import { initialsFor } from '@/lib/avatar';
+import { candidateSchema } from '@/lib/validation';
+import { parseInput } from '@/lib/validate-input';
 import { FIELD_LABEL, TEXT_INPUT, MODAL_OVERLAY, MODAL_PANEL, PRIMARY_BTN, SECONDARY_BTN } from '@/lib/ui-classes';
 
 export interface EditableCandidate {
@@ -34,15 +36,20 @@ export function CandidateEditModal({
   const { showError, showSuccess } = useFeedback();
 
   async function save() {
+    const parsed = parseInput(candidateSchema, { name, bio });
+    if ('error' in parsed) {
+      showError(parsed.error, 'Candidate not saved');
+      return;
+    }
     setSaving(true);
     try {
-      const result = await updateCandidateAction(initial.candidateId, { name, bio });
+      const result = await updateCandidateAction(initial.candidateId, parsed.data);
       if ('error' in result) {
         showError(result.error, 'Candidate not saved');
         return;
       }
       showSuccess('Candidate updated.');
-      onSaved({ ...initial, name, bio, photoUrl });
+      onSaved({ ...initial, ...parsed.data, photoUrl });
     } catch {
       showError('Something went wrong. Please try again.', 'Candidate not saved');
     } finally {

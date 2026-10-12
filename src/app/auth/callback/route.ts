@@ -1,13 +1,10 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { safeNextPathSchema } from '@/lib/validation';
 
-// Only a same-origin relative path is a safe redirect target: it must start
-// with a single '/' and not '//' (protocol-relative, e.g. "//evil.com") or
-// an absolute URL (e.g. "https://evil.com"), otherwise a crafted `next`
-// value could send a signed-in user to an attacker's site (open redirect).
 function isSafeNextPath(next: string | null | undefined): next is string {
-  return !!next && next.startsWith('/') && !next.startsWith('//');
+  return safeNextPathSchema.safeParse(next).success;
 }
 
 export async function GET(request: Request) {

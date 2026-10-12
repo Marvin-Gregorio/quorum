@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { useFeedback } from '@/components/feedback-provider';
 import { createBrowserSupabaseClient } from '@/lib/supabase/client';
 import { compressCandidatePhoto } from '@/lib/image-compression';
+import { candidatePhotoPathSchema, photoFileSchema } from '@/lib/validation';
+import { parseInput } from '@/lib/validate-input';
 import { updateCandidatePhotoAction } from './actions';
 
 export function CandidatePhotoUpload({
@@ -24,10 +26,23 @@ export function CandidatePhotoUpload({
     const file = input.files?.[0];
     if (!file) return;
 
+    const parsedFile = parseInput(photoFileSchema, file);
+    const parsedPath = parseInput(candidatePhotoPathSchema, `${pageId}/${candidateId}.webp`);
+    if ('error' in parsedFile) {
+      showError(parsedFile.error, 'Photo not uploaded');
+      input.value = '';
+      return;
+    }
+    if ('error' in parsedPath) {
+      showError(parsedPath.error, 'Photo not uploaded');
+      input.value = '';
+      return;
+    }
+
     setUploading(true);
     try {
-      const compressed = await compressCandidatePhoto(file);
-      const path = `${pageId}/${candidateId}.webp`;
+      const compressed = await compressCandidatePhoto(parsedFile.data);
+      const path = parsedPath.data;
       const { error: uploadError } = await supabase.storage
         .from('candidate-photos')
         .upload(path, compressed, { upsert: true, contentType: 'image/webp' });

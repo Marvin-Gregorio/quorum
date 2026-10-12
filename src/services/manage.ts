@@ -4,9 +4,17 @@ import type { AllowedDomain, Candidate, Position } from '@/types/models';
 import { sanitizeText } from '@/lib/sanitize';
 import { generateUniqueSlug, nextSlugAttempt, slugify } from '@/lib/slug';
 import { signCandidatePhotoUrls } from '@/lib/candidate-photos';
+import type { CandidateInput, CreateElectionInput, PageSettingsInput } from '@/lib/validation';
 
 const MAX_SLUG_INSERT_ATTEMPTS = 5;
 const POSTGRES_UNIQUE_VIOLATION = '23505';
+// Zod's min(1) runs on the raw string, so "<b></b>" passes it but sanitizes
+// down to nothing; the service has to re-check after stripping tags.
+const BLANK_AFTER_SANITIZE_ERROR = 'Names and titles cannot be empty once HTML tags are removed.';
+
+function isBlankAfterSanitize(...values: string[]): boolean {
+  return values.some((value) => sanitizeText(value) === '');
+}
 
 type PositionWithCandidates = Pick<Position, 'id' | 'title'> & {
   candidates: Pick<Candidate, 'id' | 'name' | 'bio' | 'photo_path'>[];
@@ -84,16 +92,6 @@ export async function getManagedElection(
   };
 }
 
-export interface CreateElectionInput {
-  organizationName: string;
-  title: string;
-  votingStartsAt: string;
-  votingEndsAt: string;
-  isPrivate: boolean;
-  domains: string[];
-  positions: { title: string; candidates: { name: string; bio: string }[] }[];
-}
-
 export interface CreatedElection {
   slug: string;
   pageId: string;
@@ -168,9 +166,10 @@ async function insertPositionsWithCandidates(
   const createdPositions: CreatedElection['positions'] = [];
 
   for (const [index, position] of positions.entries()) {
+    const positionTitle = sanitizeText(position.title);
     const { data: createdPosition, error: positionError } = await supabase
       .from('positions')
-      .insert({ page_id: pageId, title: sanitizeText(position.title), display_order: index })
+      .insert({ page_id: pageId, title: positionTitle, display_order: index })
       .select()
       .single();
 
@@ -181,11 +180,12 @@ async function insertPositionsWithCandidates(
 
     const createdCandidates: { name: string; id: string }[] = [];
     for (const candidate of position.candidates) {
+      const candidateName = sanitizeText(candidate.name);
       const { data: createdCandidate, error: candidateError } = await supabase
         .from('candidates')
         .insert({
           position_id: createdPosition.id,
-          name: sanitizeText(candidate.name),
+          name: candidateName,
           bio: sanitizeText(candidate.bio),
         })
         .select()
@@ -194,9 +194,9 @@ async function insertPositionsWithCandidates(
         if (candidateError) console.error(candidateError);
         return { error: 'The election was created, but one of its candidates could not be saved.' };
       }
-      createdCandidates.push({ name: candidate.name, id: createdCandidate.id });
+      createdCandidates.push({ name: candidateName, id: createdCandidate.id });
     }
-    createdPositions.push({ title: position.title, id: createdPosition.id, candidates: createdCandidates });
+    createdPositions.push({ title: positionTitle, id: createdPosition.id, candidates: createdCandidates });
   }
 
   return createdPositions;
@@ -210,6 +210,13 @@ export async function createElection(
   if (new Date(input.votingStartsAt).getTime() <= Date.now()) {
     return { error: 'Voting must start in the future.' };
   }
+
+  const requiredTexts = [
+    input.organizationName,
+    input.title,
+    ...input.positions.flatMap((position) => [position.title, ...position.candidates.map((c) => c.name)]),
+  ];
+  if (isBlankAfterSanitize(...requiredTexts)) return { error: BLANK_AFTER_SANITIZE_ERROR };
 
   const page = await insertPageWithUniqueSlug(supabase, ownerId, input);
   if ('error' in page) return page;
@@ -227,21 +234,14 @@ export async function createElection(
   return { slug: page.slug, pageId: page.id, ownerId, positions };
 }
 
-export interface PageSettingsInput {
-  organizationName: string;
-  title: string;
-  votingStartsAt: string;
-  votingEndsAt: string;
-  isPrivate: boolean;
-  domains: string[];
-}
-
 export async function updateElectionSettings(
   supabase: SupabaseClient<Database>,
   ownerId: string,
   pageId: string,
   input: PageSettingsInput
 ): Promise<{ ok: true } | { error: string }> {
+  if (isBlankAfterSanitize(input.organizationName, input.title)) return { error: BLANK_AFTER_SANITIZE_ERROR };
+
   const { data: updatedRows, error } = await supabase
     .from('pages')
     .update({
@@ -290,8 +290,10 @@ export async function updateCandidatePhoto(
 export async function createCandidate(
   supabase: SupabaseClient<Database>,
   positionId: string,
-  input: { name: string; bio: string }
+  input: CandidateInput
 ): Promise<{ id: string } | { error: string }> {
+  if (isBlankAfterSanitize(input.name)) return { error: BLANK_AFTER_SANITIZE_ERROR };
+
   const { data, error } = await supabase
     .from('candidates')
     .insert({ position_id: positionId, name: sanitizeText(input.name), bio: sanitizeText(input.bio) })
@@ -308,8 +310,10 @@ export async function createCandidate(
 export async function updateCandidate(
   supabase: SupabaseClient<Database>,
   candidateId: string,
-  input: { name: string; bio: string }
+  input: CandidateInput
 ): Promise<{ ok: true } | { error: string }> {
+  if (isBlankAfterSanitize(input.name)) return { error: BLANK_AFTER_SANITIZE_ERROR };
+
   const { data, error } = await supabase
     .from('candidates')
     .update({ name: sanitizeText(input.name), bio: sanitizeText(input.bio) })
@@ -340,6 +344,8 @@ export async function createPosition(
   pageId: string,
   title: string
 ): Promise<{ id: string } | { error: string }> {
+  if (isBlankAfterSanitize(title)) return { error: BLANK_AFTER_SANITIZE_ERROR };
+
   const { count } = await supabase
     .from('positions')
     .select('id', { count: 'exact', head: true })

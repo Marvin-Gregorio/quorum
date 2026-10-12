@@ -2,6 +2,7 @@
 
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { voteSchema } from '@/lib/validation';
+import { parseInput } from '@/lib/validate-input';
 import { castVote } from '@/services/ballot';
 import { voteRateLimit } from '@/lib/rate-limit';
 
@@ -9,8 +10,8 @@ export async function castVoteAction(
   positionId: string,
   candidateId: string
 ): Promise<{ ok: true } | { error: string }> {
-  const result = voteSchema.safeParse({ positionId, candidateId });
-  if (!result.success) return { error: 'Please select a candidate before casting your vote.' };
+  const vote = parseInput(voteSchema, { positionId, candidateId });
+  if ('error' in vote) return vote;
 
   const supabase = await createServerSupabaseClient();
   const { data: userData } = await supabase.auth.getUser();
@@ -19,5 +20,5 @@ export async function castVoteAction(
   const { success } = await voteRateLimit.limit(userData.user.id);
   if (!success) return { error: 'Too many vote changes recently. Please slow down and try again.' };
 
-  return castVote(supabase, userData.user.id, positionId, candidateId);
+  return castVote(supabase, userData.user.id, vote.data.positionId, vote.data.candidateId);
 }

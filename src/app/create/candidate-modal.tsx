@@ -3,6 +3,9 @@
 import { useState } from 'react';
 import { initialsFor } from '@/lib/avatar';
 import { cn } from '@/lib/cn';
+import { useFeedback } from '@/components/feedback-provider';
+import { candidateSchema, photoFileSchema } from '@/lib/validation';
+import { parseInput } from '@/lib/validate-input';
 import { FIELD_LABEL, TEXT_INPUT, MODAL_OVERLAY, MODAL_PANEL, PRIMARY_BTN, SECONDARY_BTN } from '@/lib/ui-classes';
 
 export interface CandidateDraft {
@@ -31,12 +34,29 @@ export function CandidateModal({
   const [bio, setBio] = useState(initial.bio);
   const [photoFile, setPhotoFile] = useState(initial.photoFile);
   const [previewUrl, setPreviewUrl] = useState(initial.previewUrl);
+  const { showError } = useFeedback();
 
   function onPhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    const parsed = parseInput(photoFileSchema, file);
+    if ('error' in parsed) {
+      showError(parsed.error, 'Photo not added');
+      // Clear the input so re-picking the same rejected file fires onChange again.
+      e.target.value = '';
+      return;
+    }
     setPhotoFile(file);
     setPreviewUrl(URL.createObjectURL(file));
+  }
+
+  function onSaveClick() {
+    const parsed = parseInput(candidateSchema, { name, bio });
+    if ('error' in parsed) {
+      showError(parsed.error, 'Candidate not saved');
+      return;
+    }
+    onSave({ ...parsed.data, photoFile, previewUrl });
   }
 
   return (
@@ -100,7 +120,7 @@ export function CandidateModal({
             <button type="button" className={SECONDARY_BTN} onClick={onClose}>
               Cancel
             </button>
-            <button type="button" className={PRIMARY_BTN} onClick={() => onSave({ name, bio, photoFile, previewUrl })}>
+            <button type="button" className={PRIMARY_BTN} onClick={onSaveClick}>
               Save candidate
             </button>
           </div>
