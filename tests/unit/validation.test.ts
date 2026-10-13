@@ -141,10 +141,32 @@ describe('createElectionSchema', () => {
     expect(createElectionSchema.safeParse({ ...VALID_SETTINGS }).success).toBe(false);
   });
 
-  it('validates nested positions and candidates', () => {
-    expect(parseInput(createElectionSchema, { ...valid, positions: [{ title: '', candidates: [] }] })).toEqual({
-      error: 'Position title is required.',
+  it('requires at least one position', () => {
+    expect(parseInput(createElectionSchema, { ...valid, positions: [] })).toEqual({
+      error: 'Add at least one position.',
     });
+  });
+
+  it('requires every position to have at least one candidate', () => {
+    expect(parseInput(createElectionSchema, { ...valid, positions: [{ title: 'Chair', candidates: [] }] })).toEqual({
+      error: 'Every position needs at least one candidate.',
+    });
+    expect(
+      parseInput(createElectionSchema, {
+        ...valid,
+        positions: [valid.positions[0], { title: 'Treasurer', candidates: [] }],
+      })
+    ).toEqual({ error: 'Every position needs at least one candidate.' });
+  });
+
+  it('accepts an uncontested position with a single candidate', () => {
+    expect(createElectionSchema.safeParse(valid).success).toBe(true);
+  });
+
+  it('validates nested positions and candidates', () => {
+    expect(
+      parseInput(createElectionSchema, { ...valid, positions: [{ title: '', candidates: [{ name: 'Dana', bio: '' }] }] })
+    ).toEqual({ error: 'Position title is required.' });
     expect(
       parseInput(createElectionSchema, { ...valid, positions: [{ title: 'Chair', candidates: [{ name: '', bio: '' }] }] })
     ).toEqual({ error: 'Candidate name is required.' });
@@ -162,7 +184,7 @@ describe('createElectionSchema', () => {
   it('caps positions and candidates per position', () => {
     const tooManyPositions = Array.from({ length: MAX_POSITIONS_PER_ELECTION + 1 }, () => ({
       title: 'P',
-      candidates: [],
+      candidates: [{ name: 'C', bio: '' }],
     }));
     expect(createElectionSchema.safeParse({ ...valid, positions: tooManyPositions }).success).toBe(false);
 

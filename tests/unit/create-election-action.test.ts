@@ -88,6 +88,8 @@ describe('createElectionAction', () => {
     ['positions that are not an array', { ...valid, positions: 'x' }],
     ['a missing positions field', { ...valid, positions: undefined }],
     ['an invalid allowed domain', { ...valid, isPrivate: true, domains: ['foo bar'] }],
+    ['no positions', { ...valid, positions: [] }],
+    ['a position with no candidates', { ...valid, positions: [{ title: 'Chair', candidates: [] }] }],
     ['an empty candidate name', { ...valid, positions: [{ title: 'Chair', candidates: [{ name: '', bio: '' }] }] }],
     ['no payload at all', undefined],
   ])('returns an error, not a throw, for %s', async (_label, payload) => {

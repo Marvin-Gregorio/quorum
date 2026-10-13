@@ -28,7 +28,7 @@ export function PositionsEditor({
   return (
     <div className="border-t border-line mt-8 pt-8">
       <h2 className="text-xl mb-1">Positions &amp; candidates</h2>
-      <p className="text-[13px] text-ink-2 m-0 mb-5">Deleting a position also deletes its candidates.</p>
+      <p className="text-[13px] text-ink-2 m-0 mb-5">An election needs at least one position, and every position needs at least one candidate. Deleting a position also deletes its candidates.</p>
 
       {positions.map((pos) => (
         <div className="border-t border-line pt-7 mt-7" key={pos.id}>
@@ -80,7 +80,7 @@ export function PositionsEditor({
               ))}
             </div>
           ) : (
-            <p className="text-sm text-ink-2 py-4 border-t border-line">No candidates yet.</p>
+            <p className="text-sm text-ink-2 py-4 border-t border-line">No candidates yet. Add at least one.</p>
           )}
 
           <button

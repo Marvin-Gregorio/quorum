@@ -38,6 +38,20 @@ function fillValidBasics() {
   fill('Closes', '2099-01-15T17:00');
 }
 
+// The position title input has no accessible label, and it's the only text
+// input still empty once the basics are filled.
+function addPosition(title: string) {
+  fireEvent.click(screen.getByRole('button', { name: /add a position/i }));
+  const titleInput = screen.getAllByRole('textbox').at(-1)!;
+  fireEvent.change(titleInput, { target: { value: title } });
+}
+
+function addCandidate(name: string) {
+  fireEvent.click(screen.getByRole('button', { name: /add a candidate/i }));
+  fill('Name', name);
+  fireEvent.click(screen.getByRole('button', { name: 'Save candidate' }));
+}
+
 function submit() {
   fireEvent.click(screen.getByRole('button', { name: 'Create election' }));
 }
@@ -73,6 +87,8 @@ describe('CreateElectionForm validation', () => {
   it('blocks submit when voting closes before it opens', async () => {
     renderForm();
     fillValidBasics();
+    addPosition('Chair');
+    addCandidate('Dana');
     fill('Closes', '2098-12-31T09:00');
     submit();
     expect(await screen.findByRole('alertdialog')).toHaveTextContent('Voting must close after it opens.');
@@ -85,6 +101,23 @@ describe('CreateElectionForm validation', () => {
     fireEvent.click(screen.getByRole('button', { name: /add a position/i }));
     submit();
     expect(await screen.findByRole('alertdialog')).toHaveTextContent('Position title is required.');
+    expect(createElectionAction).not.toHaveBeenCalled();
+  });
+
+  it('blocks submit when the election has no positions', async () => {
+    renderForm();
+    fillValidBasics();
+    submit();
+    expect(await screen.findByRole('alertdialog')).toHaveTextContent('Add at least one position.');
+    expect(createElectionAction).not.toHaveBeenCalled();
+  });
+
+  it('blocks submit when a position has no candidates', async () => {
+    renderForm();
+    fillValidBasics();
+    addPosition('Chair');
+    submit();
+    expect(await screen.findByRole('alertdialog')).toHaveTextContent('Every position needs at least one candidate.');
     expect(createElectionAction).not.toHaveBeenCalled();
   });
 
@@ -101,6 +134,8 @@ describe('CreateElectionForm validation', () => {
     createElectionAction.mockResolvedValue({ error: 'stop here' });
     renderForm();
     fillValidBasics();
+    addPosition('Chair');
+    addCandidate('Dana');
     submit();
     await waitFor(() => expect(createElectionAction).toHaveBeenCalledTimes(1));
     expect(createElectionAction.mock.calls[0][0]).toMatchObject({
@@ -108,7 +143,7 @@ describe('CreateElectionForm validation', () => {
       title: 'Board election',
       isPrivate: false,
       domains: [],
-      positions: [],
+      positions: [{ title: 'Chair', candidates: [{ name: 'Dana', bio: '' }] }],
     });
   });
 });

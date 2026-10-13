@@ -1,27 +1,25 @@
 import { test, expect } from '@playwright/test';
 import { createClientAs } from '../rls/setup';
 
-// NOTE on scope: the plan's originally-envisioned e2e flow (create an
-// election, add a position, add a candidate via a modal, cast a vote via
-// radio buttons, and see the tally update) cannot be driven through the
-// browser today. Every page task before this one (15, 17, 18, 19, 20, 21)
-// deliberately shipped a "minimal shell" — real Server Actions and real data
-// loading, but without the interactive UI (add-position/add-candidate
-// modals, the ballot's radio bubbles, the live results bars) that a later
-// "porting" pass was supposed to add. No task in this plan actually did that
-// porting, so those controls do not exist in the rendered output.
-//
-// This test instead covers the golden path that IS real and fully wired
-// end-to-end through the current UI: sign in, submit the real "create
-// election" form, follow the real Server Action's redirect, and confirm the
-// Manager Console renders the data that was just submitted, loaded via a
-// real query against the local Supabase/Postgres stack.
+// NOTE on scope: this covers the golden path that is wired end-to-end through
+// the current UI: sign in, fill the real "create election" form (including the
+// required position and candidate), follow the real Server Action's redirect,
+// and confirm the Manager Console renders what was submitted, loaded via a
+// real query against the local Supabase/Postgres stack. Voting and live
+// results are not driven through the browser here.
 
 function projectRefFromSupabaseUrl(url: string): string {
   // Mirrors supabase-js's own default storageKey derivation
   // (`sb-${new URL(url).hostname.split('.')[0]}-auth-token`) so the cookie we
   // seed here has the exact name @supabase/ssr's server client looks for.
   return new URL(url).hostname.split('.')[0];
+}
+
+// datetime-local inputs take 'YYYY-MM-DDTHH:mm' in the browser's local time.
+function daysFromNowLocal(days: number): string {
+  const date = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
 test('create an election and land on its Manager Console with the submitted data', async ({
@@ -57,11 +55,24 @@ test('create an election and land on its Manager Console with the submitted data
   const organizationName = `E2E Test Org ${uniqueSuffix}`;
   const title = `E2E Smoke Test Election ${uniqueSuffix}`;
 
+  const positionTitle = `Chair ${uniqueSuffix}`;
+  const candidateName = `Dana Okafor ${uniqueSuffix}`;
+
   await page.goto('/create');
   await page.getByLabel('Organization name').fill(organizationName);
   await page.getByLabel('Election title').fill(title);
-  await page.getByLabel('Opens').fill('2020-01-01T00:00');
-  await page.getByLabel('Closes').fill('2099-01-01T00:00');
+  // Creation rejects a start time that isn't in the future.
+  await page.getByLabel('Opens').fill(daysFromNowLocal(7));
+  await page.getByLabel('Closes').fill(daysFromNowLocal(14));
+
+  // An election needs at least one position, and each position at least one candidate.
+  await page.getByRole('button', { name: '+ Add a position' }).click();
+  // The position title input has no accessible label of its own.
+  await page.locator('div:has(> label:text("Position title")) > input').fill(positionTitle);
+  await page.getByRole('button', { name: '+ Add a candidate' }).click();
+  await page.getByRole('dialog', { name: 'Candidate' }).getByLabel('Name').fill(candidateName);
+  await page.getByRole('button', { name: 'Save candidate' }).click();
+
   await page.getByRole('button', { name: 'Create election' }).click();
 
   // Real Server Action -> real Postgres insert -> real router.push redirect.
@@ -73,4 +84,6 @@ test('create an election and land on its Manager Console with the submitted data
   // the full round trip actually persisted and reloaded the right data.
   await expect(page.getByRole('heading', { name: title })).toBeVisible();
   await expect(page.getByText(organizationName)).toBeVisible();
+  await expect(page.getByRole('heading', { name: positionTitle })).toBeVisible();
+  await expect(page.getByText(candidateName)).toBeVisible();
 });
