@@ -73,9 +73,11 @@ export const createElectionSchema = pageSettingsFields
         positionSchema.extend({
           candidates: z
             .array(candidateSchema)
+            .min(1, 'Every position needs at least one candidate.')
             .max(MAX_CANDIDATES_PER_POSITION, `A position can have at most ${MAX_CANDIDATES_PER_POSITION} candidates.`),
         })
       )
+      .min(1, 'Add at least one position.')
       .max(MAX_POSITIONS_PER_ELECTION, `An election can have at most ${MAX_POSITIONS_PER_ELECTION} positions.`),
   })
   .refine(closesAfterItOpens, CLOSES_AFTER_OPENS);
